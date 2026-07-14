@@ -1,0 +1,22 @@
+{
+  "name": "nexus-2026-smart-stadium-ai",
+  "version": "1.0.0",
+  "description": "Production-Ready GenAI-enabled solution for FIFA World Cup 2026 Smart Stadium & Tournament Operations. Built for PromptWars Virtual Challenge 4.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -p 3000"
+  },
+  "keywords": [
+    "promptwars",
+    "fifa-2026",
+    "smart-stadium",
+    "genai",
+    "tournament-operations",
+    "accessibility",
+    "sustainability",
+    "crowd-management"
+  ],
+  "author": "PromptWars Challenge 4 Winner",
+  "license": "MIT"
+}

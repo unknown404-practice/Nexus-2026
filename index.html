@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus 2026 | FIFA World Cup Smart Stadium AI & Tournament Operations Hub</title>
+    <meta name="description" content="Production-Ready GenAI-enabled solution for FIFA World Cup 2026. Built for Google Developer Group (GDG) Project Submission.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#9889;</text></svg>">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0B0F1A;
+            --bg-secondary: #101626;
+            --bg-glass: rgba(16, 22, 38, 0.75);
+            --color-primary: #00F0FF;
+            --color-secondary: #BD00FF;
+            --color-accent: #FF3366;
+            --color-success: #00FF88;
+            --color-warning: #FFB800;
+            --color-danger: #FF3366;
+            --color-text: #F0F4FF;
+            --color-text-dim: #8F9BB3;
+            --border-glass: rgba(143, 155, 179, 0.18);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.4);
+            --font-main: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+            --header-h: 72px;
+        }
+
+        html { scroll-behavior: smooth; overflow-y: scroll !important; overflow-x: hidden !important; height: 100%; }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-primary);
+            color: var(--color-text);
+            height: 100%;
+            width: 100%;
+            overflow: hidden !important;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: var(--header-h);
+            background: rgba(11, 15, 26, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .brand-container { display: flex; align-items: center; gap: 1.5rem; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { font-size: 2rem; }
+        .brand-text h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 0.08em; color: var(--color-primary); line-height: 1.2; }
+        .brand-text p { font-size: 0.72rem; color: var(--color-text-dim); letter-spacing: 0.04em; }
+
+        .live-indicator {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: 20px; padding: 0.35rem 0.8rem;
+            font-size: 0.72rem; font-weight: 700; color: var(--color-primary);
+            font-family: var(--font-mono); letter-spacing: 0.04em;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--color-success);
+            animation: pulse 1.8s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.5); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 0.8rem; }
+        .mode-switcher { display: flex; gap: 0.4rem; }
+        .mode-btn {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass);
+            color: var(--color-text-dim); padding: 0.4rem 0.8rem;
+            border-radius: 8px; font-size: 0.75rem; cursor: pointer;
+            transition: all 0.2s; font-family: var(--font-main); white-space: nowrap;
+        }
+        .mode-btn:hover { border-color: var(--color-primary); color: var(--color-text); }
+        .mode-btn.active { background: rgba(0,240,255,0.12); border-color: var(--color-primary); color: var(--color-primary); font-weight: 700; }
+
+        .lang-selector {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass);
+            color: var(--color-text-dim); padding: 0.4rem 0.6rem;
+            border-radius: 8px; font-size: 0.75rem; cursor: pointer;
+            font-family: var(--font-main);
+        }
+        .lang-selector option { background: var(--bg-secondary); color: var(--color-text); }
+
+        .voice-toggle {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border-glass);
+            color: var(--color-text-dim); width: 36px; height: 36px;
+            border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+        }
+        .voice-toggle:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+        /* ── MAIN LAYOUT ── */
+        .main-container {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            height: calc(100vh - var(--header-h));
+            overflow: hidden;
+        }
+
+        /* ── AI SIDEBAR ── */
+        .ai-sidebar {
+            border-right: 1px solid var(--border-glass);
+            display: flex; flex-direction: column;
+            background: rgba(11, 15, 26, 0.6);
+            overflow: hidden;
+        }
+        .ai-concierge-card {
+            display: flex; flex-direction: column;
+            height: 100%; overflow: hidden;
+        }
+        .ai-concierge-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border-glass);
+            flex-shrink: 0;
+        }
+        .ai-title { display: flex; align-items: center; gap: 0.6rem; }
+        .ai-title h2 { font-size: 1rem; font-weight: 800; color: var(--color-primary); line-height: 1.2; }
+        .ai-status-badge {
+            display: flex; align-items: center; gap: 0.4rem;
+            background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3);
+            border-radius: 12px; padding: 0.25rem 0.6rem;
+            font-size: 0.68rem; font-weight: 700; color: var(--color-success);
+            font-family: var(--font-mono); white-space: nowrap;
+        }
+
+        .ai-chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.2rem;
+            display: flex; flex-direction: column; gap: 0.8rem;
+        }
+        .ai-chat-body::-webkit-scrollbar { width: 4px; }
+        .ai-chat-body::-webkit-scrollbar-track { background: transparent; }
+        .ai-chat-body::-webkit-scrollbar-thumb { background: rgba(143,155,179,0.2); border-radius: 4px; }
+
+        .chat-bubble {
+            padding: 0.7rem 0.9rem;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            max-width: 92%;
+            animation: fadeSlideIn 0.3s ease;
+        }
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-bubble.user {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.ai {
+            background: rgba(189, 0, 255, 0.08);
+            border: 1px solid rgba(189, 0, 255, 0.2);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble .bubble-label {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; margin-bottom: 0.3rem; display: block;
+        }
+        .chat-bubble.user .bubble-label { color: var(--color-primary); }
+        .chat-bubble.ai .bubble-label { color: var(--color-secondary); }
+        .typing-indicator { display: flex; gap: 4px; padding: 0.5rem; }
+        .typing-indicator span {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--color-secondary);
+            animation: typingDot 1.2s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingDot {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1); }
+        }
+
+        .quick-prompts {
+            padding: 0.8rem 1.2rem;
+            border-top: 1px solid var(--border-glass);
+            display: flex; flex-wrap: wrap; gap: 0.4rem;
+            flex-shrink: 0;
+        }
+        .quick-prompts .qlabel {
+            width: 100%; font-size: 0.7rem; color: var(--color-text-dim);
+            margin-bottom: 0.2rem; letter-spacing: 0.02em;
+        }
+        .prompt-chip {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-glass);
+            color: var(--color-text-dim);
+            padding: 0.3rem 0.6rem;
+            border-radius: 16px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+            white-space: nowrap;
+        }
+        .prompt-chip:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            background: rgba(0,240,255,0.06);
+        }
+
+        .ai-input-bar {
+            display: flex; gap: 0.5rem;
+            padding: 0.8rem 1.2rem;
+            border-top: 1px solid var(--border-glass);
+            flex-shrink: 0;
+        }
+        .ai-input {
+            flex: 1;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 0.6rem 0.9rem;
+            color: var(--color-text);
+            font-size: 0.85rem;
+            font-family: var(--font-main);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .ai-input::placeholder { color: var(--color-text-dim); }
+        .ai-input:focus { border-color: var(--color-primary); }
+        .ai-send-btn {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border: none; border-radius: var(--radius-md);
+            width: 42px; height: 42px;
+            color: #000; font-size: 1.1rem;
+            cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .ai-send-btn:hover { transform: scale(1.05); box-shadow: 0 0 16px rgba(0,240,255,0.35); }
+
+        /* ── DASHBOARD CONTENT ── */
+        .dashboard-content {
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .dashboard-content::-webkit-scrollbar { width: 6px; }
+        .dashboard-content::-webkit-scrollbar-track { background: transparent; }
+        .dashboard-content::-webkit-scrollbar-thumb { background: rgba(143,155,179,0.2); border-radius: 4px; }
+
+        .glass-panel {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-glass);
+        }
+
+        /* ── MATCH HERO ── */
+        .match-hero-banner {
+            background: linear-gradient(135deg, rgba(0,240,255,0.08) 0%, rgba(189,0,255,0.08) 100%);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1.8rem;
+            margin-bottom: 1.2rem;
+        }
+        .match-badge {
+            display: inline-block;
+            background: rgba(0,240,255,0.12);
+            border: 1px solid rgba(0,240,255,0.3);
+            border-radius: 20px;
+            padding: 0.3rem 0.9rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--color-primary);
+            font-family: var(--font-mono);
+            margin-bottom: 0.8rem;
+        }
+        .match-info h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.6rem;
+        }
+        .match-meta {
+            display: flex; flex-wrap: wrap; gap: 1.2rem;
+        }
+        .meta-item {
+            font-size: 0.8rem;
+            color: var(--color-text-dim);
+            display: flex; align-items: center; gap: 0.3rem;
+        }
+
+        /* ── TAB NAVIGATION ── */
+        .module-tabs {
+            display: flex; gap: 0.4rem;
+            margin-bottom: 1.2rem;
+            overflow-x: auto;
+            padding-bottom: 0.3rem;
+            flex-shrink: 0;
+        }
+        .module-tabs::-webkit-scrollbar { height: 3px; }
+        .module-tabs::-webkit-scrollbar-thumb { background: rgba(143,155,179,0.15); border-radius: 3px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-glass);
+            color: var(--color-text-dim);
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: var(--font-main);
+            font-weight: 500;
+        }
+        .tab-btn:hover { border-color: rgba(0,240,255,0.3); color: var(--color-text); }
+        .tab-btn.active {
+            background: rgba(0,240,255,0.1);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            font-weight: 700;
+        }
+        .tab-panel { display: none; animation: fadeIn 0.25s ease; }
+        .tab-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ── MAP ── */
+        .map-grid-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1.2rem;
+            min-height: 480px;
+        }
+        .stadium-map-viewer {
+            position: relative;
+            background: #0A0E17;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            min-height: 420px;
+        }
+        .stadium-bg-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            position: absolute; inset: 0;
+            opacity: 0.25;
+        }
+        .svg-stadium-overlay {
+            position: relative; z-index: 2;
+            width: 100%; height: 100%;
+            min-height: 420px;
+        }
+        .map-controls {
+            position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%);
+            z-index: 5;
+            display: flex; gap: 0.4rem;
+            background: rgba(11,15,26,0.9);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px; padding: 0.4rem;
+        }
+        .map-filter-btn {
+            background: transparent; border: 1px solid transparent;
+            color: var(--color-text-dim); padding: 0.35rem 0.7rem;
+            border-radius: 14px; font-size: 0.7rem; cursor: pointer;
+            transition: all 0.2s; font-family: var(--font-main); white-space: nowrap;
+        }
+        .map-filter-btn:hover { color: var(--color-text); }
+        .map-filter-btn.active { background: rgba(0,240,255,0.12); border-color: var(--color-primary); color: var(--color-primary); }
+
+        .zone-details-card {
+            padding: 1.5rem;
+        }
+        .zone-details-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.6rem; }
+
+        /* ── GATES ── */
+        .gates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .gate-card {
+            padding: 1.2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-glass);
+            background: var(--bg-glass);
+            transition: border-color 0.2s;
+        }
+        .gate-card:hover { border-color: rgba(0,240,255,0.3); }
+        .gate-card.critical { border-left: 3px solid var(--color-danger); }
+        .gate-card.warning { border-left: 3px solid var(--color-warning); }
+        .gate-card.optimal { border-left: 3px solid var(--color-success); }
+        .gate-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 0.8rem;
+        }
+        .gate-header h4 { font-size: 0.95rem; font-weight: 700; color: #FFF; }
+        .gate-badge {
+            padding: 0.2rem 0.5rem; border-radius: 8px;
+            font-size: 0.65rem; font-weight: 700;
+            font-family: var(--font-mono); letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .gate-badge.optimal { background: rgba(0,255,136,0.12); color: var(--color-success); border: 1px solid rgba(0,255,136,0.3); }
+        .gate-badge.warning { background: rgba(255,184,0,0.12); color: var(--color-warning); border: 1px solid rgba(255,184,0,0.3); }
+        .gate-badge.critical { background: rgba(255,51,102,0.12); color: var(--color-danger); border: 1px solid rgba(255,51,102,0.3); }
+        .gate-stat { font-size: 1.8rem; font-weight: 800; font-family: var(--font-mono); line-height: 1.2; margin: 0.4rem 0; }
+        .gate-stat small { font-size: 0.75rem; font-weight: 500; }
+        .gate-detail { font-size: 0.8rem; color: var(--color-text-dim); margin-top: 0.5rem; line-height: 1.4; }
+        .gate-bar {
+            height: 4px; border-radius: 2px; background: rgba(255,255,255,0.06);
+            margin-top: 0.6rem; overflow: hidden;
+        }
+        .gate-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+        .gate-bar-fill.optimal { background: var(--color-success); }
+        .gate-bar-fill.warning { background: var(--color-warning); }
+        .gate-bar-fill.critical { background: var(--color-danger); }
+
+        /* ── COMMAND DECK ── */
+        .command-deck-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+        .command-hologram-panel {
+            background: linear-gradient(135deg, rgba(0,240,255,0.06) 0%, rgba(189,0,255,0.06) 100%);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+        }
+        .command-overlay-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .command-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+        }
+        .kpi-card {
+            background: rgba(10,14,23,0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            text-align: center;
+        }
+        .kpi-title { font-size: 0.72rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.4rem; }
+        .kpi-num { font-size: 1.6rem; font-weight: 800; font-family: var(--font-mono); color: var(--color-primary); line-height: 1.2; }
+        .kpi-num small { font-size: 0.75rem; font-weight: 500; color: var(--color-text); }
+        .kpi-sub { font-size: 0.68rem; margin-top: 0.3rem; }
+
+        .incidents-panel {
+            padding: 1.5rem;
+            display: flex; flex-direction: column;
+        }
+        .incidents-panel .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 0.8rem; margin-bottom: 1rem;
+        }
+        .incidents-panel h3 { font-size: 1.05rem; font-weight: 700; }
+        .incident-item {
+            padding: 0.8rem;
+            border-radius: var(--radius-md);
+            background: rgba(10,14,23,0.5);
+            border-left: 3px solid var(--color-primary);
+            margin-bottom: 0.6rem;
+            font-size: 0.82rem;
+            animation: fadeSlideIn 0.3s ease;
+        }
+        .incident-item.high { border-left-color: var(--color-danger); }
+        .incident-item.medium { border-left-color: var(--color-warning); }
+        .incident-item.low { border-left-color: var(--color-success); }
+        .incident-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.3rem;
+        }
+        .incident-severity {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .incident-severity.high { color: var(--color-danger); }
+        .incident-severity.medium { color: var(--color-warning); }
+        .incident-severity.low { color: var(--color-success); }
+        .incident-time { font-size: 0.68rem; color: var(--color-text-dim); font-family: var(--font-mono); }
+        .incident-desc { color: var(--color-text-dim); line-height: 1.4; }
+        .incident-action { font-size: 0.75rem; color: var(--color-primary); margin-top: 0.3rem; font-weight: 600; }
+
+        /* ── ACCESSIBILITY ── */
+        .service-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.2rem;
+        }
+        .service-card {
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+        }
+        .service-card h4 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.6rem; color: #FFF; }
+        .service-card p { font-size: 0.85rem; color: var(--color-text-dim); line-height: 1.5; margin-bottom: 0.8rem; }
+        .feature-list {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 0.4rem;
+            margin-bottom: 0.8rem;
+        }
+        .feature-list li {
+            font-size: 0.82rem; color: var(--color-text-dim);
+            padding-left: 0.3rem;
+            line-height: 1.4;
+        }
+
+        /* ── SUSTAINABILITY ── */
+        .sustain-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .sustain-card {
+            padding: 1.2rem;
+            border-radius: var(--radius-lg);
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+        }
+        .sustain-card .card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+        .sustain-card h4 { font-size: 0.95rem; font-weight: 700; color: #FFF; }
+        .sustain-card .big-num {
+            font-size: 2rem; font-weight: 800; font-family: var(--font-mono);
+            line-height: 1.2; margin: 0.3rem 0;
+        }
+        .sustain-card .desc { font-size: 0.82rem; color: var(--color-text-dim); line-height: 1.4; }
+
+        .promo-banner {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.3rem 1.5rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-left: 4px solid var(--color-success);
+            border-radius: var(--radius-lg);
+        }
+        .promo-banner h4 { font-size: 1.05rem; font-weight: 700; color: #FFF; }
+        .promo-banner p { font-size: 0.85rem; color: var(--color-text-dim); margin-top: 0.3rem; }
+
+        /* ── ARCHITECTURE TAB ── */
+        .arch-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .arch-summary-card {
+            padding: 1.2rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+        }
+        .arch-summary-card .label { font-size: 0.72rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+        .arch-summary-card .value { font-size: 1.5rem; font-weight: 800; font-family: var(--font-mono); color: #FFF; margin: 0.3rem 0; }
+        .arch-summary-card .sub { font-size: 0.72rem; }
+
+        .schema-table-wrap {
+            overflow-x: auto;
+            padding: 1.5rem;
+        }
+        .schema-table {
+            width: 100%; border-collapse: collapse;
+            font-size: 0.85rem; text-align: left;
+        }
+        .schema-table th {
+            padding: 0.7rem 0.8rem;
+            border-bottom: 2px solid var(--color-primary);
+            color: var(--color-primary);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .schema-table td {
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(143,155,179,0.12);
+            color: var(--color-text);
+            vertical-align: top;
+        }
+        .schema-table tr:hover td { background: rgba(0,240,255,0.04); }
+        .schema-table .tbl-name { font-weight: 700; color: var(--color-primary); font-family: var(--font-mono); }
+        .schema-table .fk-ref { color: var(--color-secondary); font-family: var(--font-mono); font-size: 0.78rem; }
+        .schema-table .role-desc { font-size: 0.82rem; color: var(--color-text-dim); line-height: 1.4; }
+
+        /* ── BUTTONS ── */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border: none; border-radius: 8px;
+            padding: 0.55rem 1rem;
+            color: #000; font-size: 0.8rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s;
+            font-family: var(--font-main);
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { box-shadow: 0 0 20px rgba(0,240,255,0.35); transform: translateY(-1px); }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 0.55rem 1rem;
+            color: var(--color-text-dim);
+            font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+            font-family: var(--font-main);
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .btn-secondary:hover { border-color: var(--color-primary); color: var(--color-text); }
+
+        /* ── TOAST ── */
+        .toast-container {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            z-index: 1000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .toast {
+            background: rgba(16,22,38,0.95);
+            border: 1px solid var(--color-success);
+            border-radius: var(--radius-md);
+            padding: 0.7rem 1rem;
+            font-size: 0.82rem;
+            color: var(--color-text);
+            backdrop-filter: blur(12px);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px); } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .main-container { grid-template-columns: 1fr; }
+            .ai-sidebar { display: none; }
+            .map-grid-container { grid-template-columns: 1fr; }
+            .command-deck-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── SVG MAP NODES ── */
+        .map-node { cursor: pointer; }
+        .map-node circle { transition: r 0.25s cubic-bezier(0.4, 0, 0.2, 1), fill 0.2s ease, stroke-width 0.2s ease, filter 0.25s ease; }
+        .map-node:hover circle { r: 15; stroke-width: 3.5; filter: drop-shadow(0 0 14px currentColor); }
+        .map-node text { font-size: 9px; fill: var(--color-text-dim); pointer-events: none; transition: fill 0.2s ease, font-size 0.2s ease; }
+        .map-node:hover text { fill: #FFF; font-weight: 800; font-size: 10.5px; }
+
+        /* Section heading */
+        .section-heading { margin-bottom: 1.2rem; }
+        .section-heading h3 { font-size: 1.3rem; font-weight: 800; }
+        .section-heading p { font-size: 0.85rem; color: var(--color-text-dim); margin-top: 0.3rem; }
+        .section-actions { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+        /* GDG Banner */
+        .gdg-banner {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.25);
+            padding: 0.3rem 0.8rem; border-radius: 16px;
+            font-size: 0.72rem; font-weight: 700; color: var(--color-success);
+            margin-top: 0.4rem;
+        }
+
+        /* Universal Anti-Earthquake / Shake Prevention on Hover across all HTML cards and banners */
+        .table-nav-item, .table-nav-item:hover, .table-nav-item.active,
+        .sim-card, .sim-card:hover,
+        .gate-card, .gate-card:hover,
+        .glass-panel, .glass-panel:hover,
+        .prompt-chip, .prompt-chip:hover,
+        .tab-btn, .tab-btn:hover, .tab-btn.active,
+        .match-hero-banner, .match-hero-banner:hover,
+        .incident-item, .incident-item:hover,
+        .ai-send-btn, .ai-send-btn:hover {
+            transform: none !important;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="brand-container">
+            <div class="brand-logo">
+                <div class="logo-icon">&#9889;</div>
+                <div class="brand-text">
+                    <h1>NEXUS 2026</h1>
+                    <p>FIFA World Cup Smart Stadium AI Hub</p>
+                    <div class="gdg-banner">&#128100; Author: Ranadeep Saha &nbsp;|&nbsp; &#127942; Member of Google Developer Group (GDG)</div>
+                </div>
+            </div>
+            <div class="live-indicator">
+                <div class="pulse-dot"></div>
+                <span>LIVE MATCH 62' | 81,240 FANS</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="fan">&#128075; Fan & VIP Experience</button>
+                <button class="mode-btn" data-mode="command">&#9889; Operations Command</button>
+            </div>
+            <select id="lang-selector" class="lang-selector" aria-label="Select Language">
+                <option value="en" selected>&#127760; English</option>
+                <option value="es">&#127760; Espanol</option>
+                <option value="fr">&#127760; Francais</option>
+                <option value="pt">&#127760; Portugues</option>
+                <option value="de">&#127760; Deutsch</option>
+                <option value="ar">&#127760; Arabic</option>
+                <option value="ja">&#127760; Japanese</option>
+                <option value="ko">&#127760; Korean</option>
+            </select>
+            <button id="voice-toggle" class="voice-toggle" title="Toggle AI Voice Assistant">&#128266;</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <aside class="ai-sidebar">
+            <div class="glass-panel ai-concierge-card">
+                <div class="ai-concierge-header">
+                    <div class="ai-title">
+                        <span style="font-size: 1.3rem;">&#129302;</span>
+                        <div>
+                            <h2>Nexus GenAI Concierge</h2>
+                            <span style="font-size: 0.72rem; color: var(--color-text-dim);">Multilingual &bull; Pathfinding &bull; Operations</span>
+                        </div>
+                    </div>
+                    <div class="ai-status-badge">
+                        <span class="pulse-dot" style="background-color: var(--color-success); box-shadow: 0 0 8px var(--color-success);"></span>
+                        <span>ACTIVE V4</span>
+                    </div>
+                </div>
+                <div id="ai-chat-body" class="ai-chat-body"></div>
+                <div class="quick-prompts">
+                    <span class="qlabel">&#128161; Quick AI Prompts:</span>
+                    <button class="prompt-chip" data-prompt="What is the fastest way to Sector 112 without getting stuck in crowds?">&#128506; Fastest route to Sector 112</button>
+                    <button class="prompt-chip" data-prompt="Where can I get halal and gluten-free food nearby with the shortest pickup queue?">&#127828; Halal & Gluten-Free near me</button>
+                    <button class="prompt-chip" data-prompt="I am using a wheelchair and need to find a sensory quiet room and accessible seating.">&#9855; ADA Sensory Room & Elevators</button>
+                    <button class="prompt-chip" data-prompt="How do I book an autonomous EV shuttle after the match to MetLife train station?">&#128652; Post-match EV shuttle booking</button>
+                    <button class="prompt-chip" data-prompt="How is the stadium utilizing AI to achieve carbon neutrality during this World Cup match?">&#127793; Carbon neutrality report today</button>
+                </div>
+                <form id="ai-input-form" class="ai-input-bar">
+                    <input type="text" id="ai-input-field" class="ai-input" placeholder="Ask anything about navigation, gates, accessibility, food..." autocomplete="off">
+                    <button type="submit" class="ai-send-btn" title="Send">&#10148;</button>
+                </form>
+            </div>
+        </aside>
+
+        <section class="dashboard-content">
+            <div class="match-hero-banner">
+                <div class="match-badge">&#127942; FIFA WORLD CUP 2026 &bull; QUARTERFINAL</div>
+                <div class="match-info">
+                    <h2>USA vs BRAZIL</h2>
+                    <div class="match-meta">
+                        <div class="meta-item">&#128205; MetLife Stadium (New York / New Jersey)</div>
+                        <div class="meta-item">&#127777;&#65039; 74&deg;F / Clear</div>
+                        <div class="meta-item">&#9889; 84% Solar Microgrid Powered</div>
+                        <div class="meta-item">&#128737;&#65039; Security Level 2 (High Readiness)</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="module-tabs" aria-label="Operations Modules">
+                <button class="tab-btn active" data-tab="tab-map">&#128506; Interactive 3D Stadium Map</button>
+                <button class="tab-btn" data-tab="tab-gates">&#128682; Gates & Turnstile Telemetry</button>
+                <button class="tab-btn" data-tab="tab-ops">&#9889; Operations Command Deck</button>
+                <button class="tab-btn" data-tab="tab-access">&#9855; Universal Accessibility Hub</button>
+                <button class="tab-btn" data-tab="tab-sustain">&#127793; Net-Zero Microgrid Tracker</button>
+                <button class="tab-btn" data-tab="tab-arch">&#128452;&#65039; System Architecture & DB</button>
+            </nav>
+
+            <!-- TAB 1: Stadium Map -->
+            <div id="tab-map" class="tab-panel active">
+                <div class="map-grid-container">
+                    <div class="stadium-map-viewer">
+                        <svg class="svg-stadium-overlay" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="fieldGrad" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" style="stop-color:rgba(0,255,136,0.08);" />
+                                    <stop offset="100%" style="stop-color:rgba(0,255,136,0);" />
+                                </radialGradient>
+                            </defs>
+                            <rect x="50" y="50" width="700" height="500" rx="250" fill="none" stroke="rgba(0,240,255,0.2)" stroke-width="2" stroke-dasharray="8,8" />
+                            <rect x="150" y="150" width="500" height="300" rx="150" fill="none" stroke="rgba(189,0,255,0.2)" stroke-width="2.5" />
+                            <ellipse cx="400" cy="300" rx="180" ry="100" fill="url(#fieldGrad)" stroke="rgba(0,255,136,0.25)" stroke-width="1.5" />
+                            <text x="400" y="305" text-anchor="middle" fill="rgba(0,255,136,0.35)" font-size="14" font-weight="700" font-family="monospace">PITCH</text>
+
+                            <!-- Zone Nodes -->
+                            <g id="map-nodes-group">
+                                <g class="map-node" data-zone="north" transform="translate(400,90)">
+                                    <circle r="10" fill="rgba(0,255,136,0.6)" stroke="#00FF88" stroke-width="2"><animate attributeName="r" values="10;13;10" dur="2s" repeatCount="indefinite" /></circle>
+                                    <text y="-18" text-anchor="middle" fill="#00FF88" font-size="10" font-weight="700">North Gate A</text>
+                                </g>
+                                <g class="map-node" data-zone="east" transform="translate(700,300)">
+                                    <circle r="10" fill="rgba(255,184,0,0.6)" stroke="#FFB800" stroke-width="2"><animate attributeName="r" values="10;13;10" dur="2.2s" repeatCount="indefinite" /></circle>
+                                    <text x="20" y="4" fill="#FFB800" font-size="10" font-weight="700">East Gate B</text>
+                                </g>
+                                <g class="map-node" data-zone="south" transform="translate(400,510)">
+                                    <circle r="12" fill="rgba(255,51,102,0.7)" stroke="#FF3366" stroke-width="2.5"><animate attributeName="r" values="12;16;12" dur="1.5s" repeatCount="indefinite" /></circle>
+                                    <text y="28" text-anchor="middle" fill="#FF3366" font-size="10" font-weight="700">South Gate C (Critical)</text>
+                                </g>
+                                <g class="map-node" data-zone="west" transform="translate(100,300)">
+                                    <circle r="10" fill="rgba(0,255,136,0.6)" stroke="#00FF88" stroke-width="2"><animate attributeName="r" values="10;13;10" dur="2.1s" repeatCount="indefinite" /></circle>
+                                    <text x="-20" y="4" text-anchor="end" fill="#00FF88" font-size="10" font-weight="700">West Gate D</text>
+                                </g>
+                                <g class="map-node" data-zone="vip" transform="translate(650,160)">
+                                    <circle r="8" fill="rgba(0,240,255,0.5)" stroke="#00F0FF" stroke-width="2"><animate attributeName="r" values="8;11;8" dur="2.5s" repeatCount="indefinite" /></circle>
+                                    <text x="16" y="4" fill="#00F0FF" font-size="9" font-weight="700">VIP Suite</text>
+                                </g>
+                                <g class="map-node" data-zone="access" transform="translate(150,160)">
+                                    <circle r="8" fill="rgba(0,240,255,0.5)" stroke="#00F0FF" stroke-width="2"><animate attributeName="r" values="8;11;8" dur="2.3s" repeatCount="indefinite" /></circle>
+                                    <text x="-16" y="4" text-anchor="end" fill="#00F0FF" font-size="9" font-weight="700">Sensory Hub</text>
+                                </g>
+                                <g class="map-node" data-zone="shuttle" transform="translate(400,560)">
+                                    <circle r="7" fill="rgba(0,163,255,0.5)" stroke="#00A3FF" stroke-width="1.5" />
+                                    <text y="20" text-anchor="middle" fill="#00A3FF" font-size="9">EV Shuttle Terminal</text>
+                                </g>
+                            </g>
+                        </svg>
+                        <div class="map-controls">
+                            <button class="map-filter-btn active" data-filter="all">All Zones</button>
+                            <button class="map-filter-btn" data-filter="concourse">Concourses</button>
+                            <button class="map-filter-btn" data-filter="seating">Seating Bowls</button>
+                            <button class="map-filter-btn" data-filter="vip">VIP Suites</button>
+                            <button class="map-filter-btn" data-filter="accessibility">Accessibility</button>
+                        </div>
+                    </div>
+                    <div id="zone-details-card" class="glass-panel zone-details-card">
+                        <h3>&#128205; Select a Stadium Zone</h3>
+                        <p style="color: var(--color-text-dim); font-size: 0.85rem; line-height: 1.5;">Click any glowing node on the interactive map to inspect real-time crowd density, wait times, acoustic levels, and get AI pathfinding directions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Gates -->
+            <div id="tab-gates" class="tab-panel">
+                <div class="section-heading">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
+                        <div>
+                            <h3>&#128682; Turnstile & Gate Load Balancing Grid</h3>
+                            <p>Real-time IoT sensors monitoring throughput and automatically redirecting crowd flow via LED beacons and mobile push notifications.</p>
+                        </div>
+                        <div class="section-actions">
+                            <button class="btn-secondary" onclick="showToast('Sensors re-polled successfully')">&#128260; Refresh Telemetry</button>
+                            <button class="btn-primary" onclick="handleAICrowdDiversion()">&#9889; Trigger AI Crowd Diversion</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="gates-grid" class="gates-grid"></div>
+            </div>
+
+            <!-- TAB 3: Operations Command -->
+            <div id="tab-ops" class="tab-panel">
+                <div class="command-deck-grid">
+                    <div class="command-hologram-panel">
+                        <div class="command-overlay-header">
+                            <div>
+                                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--color-primary);">&#9889; NEXUS COMMAND OPERATIONAL DECK</h3>
+                                <span style="font-size: 0.78rem; color: var(--color-text-dim);">Autonomous AI Tournament Incident Management & Predictive Decision Support</span>
+                            </div>
+                            <span class="live-indicator"><span class="pulse-dot"></span> AI AUTOPILOT ACTIVE</span>
+                        </div>
+                        <div class="command-kpi-grid">
+                            <div class="kpi-card">
+                                <div class="kpi-title">Avg Entry Wait Time</div>
+                                <div class="kpi-num">5.8 <small>mins</small></div>
+                                <div class="kpi-sub" style="color: var(--color-success);">&#8595; 64% vs 2022 World Cup avg</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-title">Active Crowd Diversions</div>
+                                <div class="kpi-num">4 <small>zones</small></div>
+                                <div class="kpi-sub" style="color: var(--color-primary);">Automated turnstile sync</div>
+                            </div>
+                            <div class="kpi-card">
+                                <div class="kpi-title">Incident SLA Response</div>
+                                <div class="kpi-num">1.9 <small>mins</small></div>
+                                <div class="kpi-sub" style="color: var(--color-success);">99.8% resolution rate</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-panel incidents-panel">
+                        <div class="panel-header">
+                            <h3>&#128680; Real-Time AI Autonomous Actions Feed</h3>
+                            <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--color-primary);">Auto-Sync: ON</span>
+                        </div>
+                        <div id="incidents-log" style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Accessibility -->
+            <div id="tab-access" class="tab-panel">
+                <div class="section-heading">
+                    <h3>&#9855; Universal Accessibility & VIP Presidential Concierge Hub</h3>
+                    <p>Ensuring zero barriers, sensory inclusion, multi-lingual audio description, and white-glove VIP operations during all tournament fixtures.</p>
+                </div>
+                <div class="service-cards-grid">
+                    <div class="service-card" style="border-top: 4px solid var(--color-success);">
+                        <h4>&#9855; ADA Priority Express Lanes & Shuttles</h4>
+                        <p>Dedicated barrier-free entry gates at North A and West D with motorized cart dispatch and zero waiting queues.</p>
+                        <ul class="feature-list">
+                            <li>&#10004; Priority Elevators E2 & E6 monitored with 100% uptime SLA</li>
+                            <li>&#10004; Real-time wheelchair space reservations in all 36 sectors</li>
+                            <li>&#10004; On-demand volunteer escort booking via mobile tap</li>
+                        </ul>
+                        <button class="btn-primary" onclick="handleAIAction('Book a wheelchair volunteer escort from Gate A')">&#128680; Request Volunteer Escort</button>
+                    </div>
+                    <div class="service-card" style="border-top: 4px solid var(--color-primary);">
+                        <h4>&#128716;&#65039; Sensory Quiet Rooms & Neurodiversity Hub</h4>
+                        <p>Certified sensory-inclusive pods at North Zone 25. Designed for neurodivergent guests experiencing sensory overload.</p>
+                        <ul class="feature-list">
+                            <li>&#10004; Acoustic soundproof relaxation pods (4 currently open)</li>
+                            <li>&#10004; Adjustable circadian bio-lighting and soothing soundscapes</li>
+                            <li>&#10004; Sensory bags (noise-canceling headphones & fidget tools)</li>
+                        </ul>
+                        <button class="btn-primary" onclick="handleAIAction('Reserve a pod in the Sensory Quiet Room')">&#128716;&#65039; Reserve Sensory Pod #3</button>
+                    </div>
+                    <div class="service-card" style="border-top: 4px solid var(--color-secondary);">
+                        <h4>&#127911; Multi-Lingual Audio Description & Commentary</h4>
+                        <p>AI real-time speech synthesis translating stadium announcements and live match commentary into 8 languages.</p>
+                        <ul class="feature-list">
+                            <li>&#10004; Bluetooth low-latency broadcasting directly to mobile phones</li>
+                            <li>&#10004; Visually impaired spatial audio description for field plays</li>
+                            <li>&#10004; Real-time sign language hologram avatars on concourse screens</li>
+                        </ul>
+                        <button class="btn-primary" onclick="handleAIAction('Enable Live Audio Description')">&#128266; Stream Live Audio Description</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: Sustainability -->
+            <div id="tab-sustain" class="tab-panel">
+                <div class="section-heading">
+                    <h3>&#127793; Net-Zero Microgrid & Carbon Footprint Telemetry</h3>
+                    <p>Our AI IoT engine continuously optimizes lighting, HVAC, water recycling, and solar power to achieve 100% carbon neutrality.</p>
+                </div>
+                <div class="sustain-grid">
+                    <div class="sustain-card">
+                        <div class="card-header">
+                            <h4>&#9728;&#65039; Solar Canopy Generation</h4>
+                            <span class="gate-badge optimal">Active Microgrid</span>
+                        </div>
+                        <div class="big-num" style="color: var(--color-primary);" id="kpi-solar">34,820 kWh</div>
+                        <p class="desc">Powering 84% of stadium operations including concourse lighting, LED ribbons, and media servers.</p>
+                    </div>
+                    <div class="sustain-card">
+                        <div class="card-header">
+                            <h4>&#10052;&#65039; AI HVAC Cooling Savings</h4>
+                            <span class="gate-badge optimal">Optimal Efficiency</span>
+                        </div>
+                        <div class="big-num" style="color: var(--color-success);" id="kpi-hvac">18.4%</div>
+                        <p class="desc">Dynamic ventilation reduction in low-occupancy sectors based on real-time thermal camera feeds.</p>
+                    </div>
+                    <div class="sustain-card">
+                        <div class="card-header">
+                            <h4>&#128167; Rainwater Recovery & Reuse</h4>
+                            <span class="gate-badge optimal">Pristine Filtration</span>
+                        </div>
+                        <div class="big-num" style="color: #00A3FF;" id="kpi-water">42,500 L</div>
+                        <p class="desc">Recycled rainwater collected from roof canopies and filtered for pitch irrigation and smart restrooms.</p>
+                    </div>
+                    <div class="sustain-card">
+                        <div class="card-header">
+                            <h4>&#127758; Total Carbon Offset Today</h4>
+                            <span class="gate-badge optimal">Net-Zero Achieved</span>
+                        </div>
+                        <div class="big-num" style="color: var(--color-secondary);" id="kpi-carbon">128.5 Tons CO2</div>
+                        <p class="desc">Certified green tournament operations through renewable power, zero-waste composting, and EV shuttles.</p>
+                    </div>
+                </div>
+                <div class="promo-banner">
+                    <div>
+                        <h4>&#127942; Green Fan Carbon Offset & EV Transit Reward Program</h4>
+                        <p>Fans who arrive via Metro Transit or reserve an Autonomous EV Shuttle earn 150 PromptWars Green Credits redeemable at concessions!</p>
+                    </div>
+                    <button class="btn-primary" onclick="handleAIAction('How do I claim my 150 Green Fan Credits for taking the metro?')">&#127873; Claim Green Credits</button>
+                </div>
+            </div>
+
+            <!-- TAB 6: Architecture -->
+            <div id="tab-arch" class="tab-panel">
+                <div class="section-heading">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem;">
+                        <div>
+                            <h3 style="color: var(--color-primary);">&#128452;&#65039; Relational Database & GenAI System Architecture</h3>
+                            <p>Complete 8-table normalized SQLite schema (<code style="color: var(--color-primary); font-family: var(--font-mono);">nexus_stadium_2026.db</code>) with Foreign Key enforcement, WAL mode, and autonomous SQL transaction loops.</p>
+                        </div>
+                        <a href="architecture_dashboard.html" target="_blank" class="btn-primary" style="text-decoration: none;">&#128640; Launch Full SQL Simulator & Schema Explorer</a>
+                    </div>
+                </div>
+                <div class="arch-summary-grid">
+                    <div class="arch-summary-card" style="border-top: 3px solid #00F0FF;">
+                        <div class="label">Database Storage Engine</div>
+                        <div class="value">SQLite 3 (WAL Mode)</div>
+                        <div class="sub" style="color: var(--color-success);">PRAGMA foreign_keys = ON</div>
+                    </div>
+                    <div class="arch-summary-card" style="border-top: 3px solid #BD00FF;">
+                        <div class="label">Normalized Tables</div>
+                        <div class="value">8 Relational Tables</div>
+                        <div class="sub" style="color: #00F0FF;">Fixtures, Gates, Zones, LLM + 4 more</div>
+                    </div>
+                    <div class="arch-summary-card" style="border-top: 3px solid #FF3366;">
+                        <div class="label">Atomic SQL Transactions</div>
+                        <div class="value">BEGIN ... COMMIT</div>
+                        <div class="sub" style="color: #FF3366;">Auto Turnstile Load Balancing</div>
+                    </div>
+                    <div class="arch-summary-card" style="border-top: 3px solid #00FF88;">
+                        <div class="label">Multi-Lingual Knowledge</div>
+                        <div class="value">8 Languages</div>
+                        <div class="sub" style="color: #00FF88;">en, es, fr, pt, de, ar, ja, ko</div>
+                    </div>
+                </div>
+                <div class="glass-panel schema-table-wrap">
+                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #FFF;">&#128203; Relational Schema Directory & Foreign Key Relationships</h4>
+                    <table class="schema-table">
+                        <thead>
+                            <tr>
+                                <th>Table Name</th>
+                                <th>Primary Key</th>
+                                <th>Foreign Keys & Constraints</th>
+                                <th>Core Role & AI Interaction</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="tbl-name">1. tournament_fixtures</td>
+                                <td style="font-family: var(--font-mono);">match_id (PK)</td>
+                                <td class="fk-ref">Master Parent Table</td>
+                                <td class="role-desc">Stores match metadata, stadium attendance (81,240 / 82,500), and security readiness levels.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">2. stadium_gates</td>
+                                <td style="font-family: var(--font-mono);">gate_id (PK)</td>
+                                <td class="fk-ref">FK &#8594; fixtures(match_id)<br>CHECK(density_pct 0-100)</td>
+                                <td class="role-desc">Monitors turnstile wait times. Triggered atomic UPDATE transactions when density exceeds 85%.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">3. stadium_zones</td>
+                                <td style="font-family: var(--font-mono);">zone_id (PK)</td>
+                                <td class="fk-ref">FK &#8594; fixtures(match_id)</td>
+                                <td class="role-desc">Concourse thermal sensors (temp_f), acoustic decibels (noise_db), and Air Quality Index (aqi_index).</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">4. genai_knowledge_graph</td>
+                                <td style="font-family: var(--font-mono);">rule_id (PK)</td>
+                                <td style="color: #FF007A; font-family: var(--font-mono); font-size: 0.78rem;">LLM Intent Core</td>
+                                <td class="role-desc">Multi-lingual localized prompt templates across 8 languages with trigger keywords and action codes.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">5. operational_incidents_log</td>
+                                <td style="font-family: var(--font-mono);">incident_id (PK)</td>
+                                <td class="fk-ref">FK &#8594; fixtures(match_id)<br>CHECK(severity HIGH/MED/LOW)</td>
+                                <td class="role-desc">Autonomous audit log recording GenAI actions, turnstile reversals, and time savings in minutes.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">6. sustainability_metrics_log</td>
+                                <td style="font-family: var(--font-mono);">log_id (AUTO PK)</td>
+                                <td class="fk-ref">FK &#8594; fixtures(match_id)</td>
+                                <td class="role-desc">Time-series telemetry tracking solar kWh, AI HVAC cooling reduction (18.4%), and carbon offset tons.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">7. accessibility_accommodations</td>
+                                <td style="font-family: var(--font-mono);">booking_id (PK)</td>
+                                <td class="fk-ref">FK &#8594; fixtures(match_id)</td>
+                                <td class="role-desc">Wheelchair bay reservations, neurodivergent sensory quiet room pod assignments, and escort logs.</td>
+                            </tr>
+                            <tr>
+                                <td class="tbl-name">8. autonomous_transit_shuttles</td>
+                                <td style="font-family: var(--font-mono);">shuttle_id (PK)</td>
+                                <td style="color: #00A3FF; font-family: var(--font-mono); font-size: 0.78rem;">EV Fleet Telemetry</td>
+                                <td class="role-desc">Monitors EV shuttle fleet docking status, battery percentage, available seats, and departure ETAs.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+    // ── DATA ──
+    const GATES_DATA = [
+        { id: 'gate_a', name: 'North Gate A (Main VIP & Media)', type: 'VIP Express', throughput: 1420, density: 24, wait: 3.2, ada: '100% ADA Express Lanes Active', status: 'Optimal' },
+        { id: 'gate_b', name: 'East Gate B (General Admission)', type: 'General Admission', throughput: 3890, density: 72, wait: 14.1, ada: 'ADA Elevator B2 Under High Load', status: 'Warning' },
+        { id: 'gate_c', name: 'South Gate C (Transit & Metro Hub)', type: 'Metro Transit Hub', throughput: 4950, density: 91, wait: 25.8, ada: 'Assisted Shuttle Required', status: 'Critical' },
+        { id: 'gate_d', name: 'West Gate D (Family & Accessibility)', type: 'Accessibility & Family', throughput: 1850, density: 31, wait: 4.0, ada: 'Zero Wait Priority Access', status: 'Optimal' },
+        { id: 'gate_vip', name: 'FIFA Delegation & VIP Gate E', type: 'Presidential VIP', throughput: 420, density: 12, wait: 1.1, ada: 'Private Concierge Active', status: 'Optimal' }
+    ];
+
+    const INCIDENTS_DATA = [
+        { id: 'inc_101', time: '19:42:15 EST', severity: 'HIGH', category: 'Crowd Bottleneck', location: 'South Concourse Gate C Plaza', desc: 'Diverted 45% of incoming crowd to West Gate D via synchronized digital wayfinding beacons.', status: 'IN_PROGRESS', saved: 18 },
+        { id: 'inc_102', time: '19:35:00 EST', severity: 'MEDIUM', category: 'Accessibility Request', location: 'East Sector 112 Wheelchair Bay', desc: 'Rerouted 14 wheelchair guests to VIP Elevator E2 with personal volunteer escort dispatch.', status: 'RESOLVED', saved: 12 },
+        { id: 'inc_103', time: '19:20:10 EST', severity: 'LOW', category: 'Energy Optimization', location: 'North Concourse Lighting & HVAC Grid', desc: 'Dimmed LED flood light bank 3 and reduced HVAC cooling load in empty auxiliary zones.', status: 'AUTOMATED', saved: 8 },
+        { id: 'inc_104', time: '19:10:05 EST', severity: 'HIGH', category: 'Medical Dispatch', location: 'West Stand Sector 128, Row 14', desc: 'Dispatched nearest paramedic team equipped with cooling kit within 2 mins.', status: 'RESOLVED', saved: 3 }
+    ];
+
+    const AI_RESPONSES = {
+        'navigation': 'Fastest route to Sector 112: Enter via West Gate D (current wait: 4 min) and take Express Corridor W-12. Estimated arrival: 6 minutes. The route avoids the congested South Gate C corridor. I have activated illuminated wayfinding beacons along your path.',
+        'accessibility': 'ADA Sensory Quiet Room Pod #3 is available at North Zone 25. Soundproof walls are active. Elevator E2 has zero wait time. I am dispatching Volunteer Escort #42 (Sarah M.) to meet you at Gate A within 2 minutes.',
+        'food': 'Halal & Gluten-Free Hub: Global Gourmet at Sector 108 (2-min queue). You can place an express QR order now for pickup at Locker B4. I have reserved your order slot.',
+        'shuttle': 'Post-match EV shuttle booking confirmed. Autonomous shuttle EV-03 (ADA Priority, 100% battery) will be at Terminal S1 at match end. Estimated capacity: 12 seats. 8 seats remaining. Your boarding pass is in your wallet.',
+        'carbon': 'Today\'s sustainability report: 34,820 kWh solar generation (84% of stadium ops), 18.4% AI HVAC savings, 42,500 L rainwater recycled. Total carbon offset: 128.5 Tons CO2. We are on track for Net-Zero certification.',
+        'default': 'I understand your query. The Nexus GenAI engine is processing real-time data from 2,400+ IoT sensors across the stadium. Let me find the optimal response for you based on current conditions.'
+    };
+
+    const ZONE_DETAILS = {
+        north: { name: 'North Gate A & Concourse', density: '24%', temp: '71\u00B0F', aqi: 'AQI 22 (Optimal)', noise: '78 dB', status: 'Optimal', desc: 'VIP and media express entry. 100% ADA lanes active. Currently operating at 24% capacity with zero wait times.' },
+        east: { name: 'East Gate B & Lower Bowl', density: '72%', temp: '73\u00B0F', aqi: 'AQI 28 (Good)', noise: '104 dB', status: 'Warning', desc: 'General admission. 72% density approaching warning threshold. AI monitoring for potential crowd diversion.' },
+        south: { name: 'South Gate C Transit Hub', density: '91%', temp: '76\u00B0F', aqi: 'AQI 45 (Moderate)', noise: '92 dB', status: 'Critical', desc: 'Metro transit hub at 91% density. AI has triggered automatic crowd diversion redirecting 45% to West Gate D.' },
+        west: { name: 'West Gate D & Family Hub', density: '31%', temp: '72\u00B0F', aqi: 'AQI 25 (Good)', noise: '102 dB', status: 'Optimal', desc: 'Family and accessibility priority gate. Zero wait priority access. Currently absorbing diverted traffic from Gate C.' },
+        vip: { name: 'Sky Box VIP Lounge', density: '65%', temp: '69\u00B0F', aqi: 'AQI 15 (Pristine)', noise: '64 dB', status: 'Optimal', desc: 'Presidential VIP suite with private concierge. Pristine air quality and acoustic isolation from main bowl.' },
+        access: { name: 'Central Sensory Hub & First Aid', density: '18%', temp: '70\u00B0F', aqi: 'AQI 12 (Pristine)', noise: '42 dB', status: 'Optimal', desc: 'Sensory quiet rooms and first aid station. 4 acoustic pods active. Pristine conditions for neurodivergent guests.' },
+        shuttle: { name: 'EV Autonomous Shuttle Terminal', density: '38%', temp: '73\u00B0F', aqi: 'AQI 20 (Optimal)', noise: '68 dB', status: 'Optimal', desc: '4 autonomous EV shuttles docked. Fleet battery avg: 94%. Next departures in 2-15 minutes.' }
+    };
+
+    // ── INITIALIZATION ──
+    document.addEventListener('DOMContentLoaded', () => {
+        initTabs();
+        initModeSwitcher();
+        initMapNodes();
+        initMapFilters();
+        initPromptChips();
+        initChatInput();
+        renderGates();
+        renderIncidents();
+        addInitialChatMessage();
+    });
+
+    // ── TABS ──
+    function initTabs() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+    }
+
+    // ── MODE SWITCHER ──
+    function initModeSwitcher() {
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.dataset.mode;
+                const mapViewer = document.querySelector('.stadium-map-viewer');
+                const detailsCard = document.getElementById('zone-details-card');
+
+                if (mode === 'command') {
+                    document.body.classList.add('command-center-active');
+                    if (mapViewer) {
+                        mapViewer.style.boxShadow = 'inset 0 0 45px rgba(255, 51, 102, 0.45), 0 0 25px rgba(255, 51, 102, 0.25)';
+                        mapViewer.style.borderColor = 'var(--color-danger)';
+                    }
+                    document.querySelectorAll('.map-node').forEach(node => {
+                        const z = node.dataset.zone;
+                        if (z === 'south' || z === 'east') {
+                            const c = node.querySelector('circle');
+                            if (c) c.setAttribute('r', z === 'south' ? '18' : '15');
+                        }
+                    });
+                    if (detailsCard) {
+                        detailsCard.innerHTML = `
+                            <h3 style="color: var(--color-danger);">&#9889; COMMAND CENTER PROTOCOL ENGAGED</h3>
+                            <span class="gate-badge critical" style="margin-bottom: 0.8rem; display: inline-block;">SOUTH GATE C SURGE (91% DENSITY)</span>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.8rem 0; font-size: 0.82rem;">
+                                <div><span style="color: var(--color-text-dim);">Active Diversions:</span> <strong style="color: var(--color-danger);">4 Corridors</strong></div>
+                                <div><span style="color: var(--color-text-dim);">Turnstile Sync:</span> <strong>Atomic WAL Mode</strong></div>
+                                <div><span style="color: var(--color-text-dim);">Emergency Reversal:</span> <strong style="color: var(--color-warning);">Gate C &#8594; Gate D</strong></div>
+                                <div><span style="color: var(--color-text-dim);">IoT Sensor Grid:</span> <strong style="color: var(--color-success);">2,400+ Active</strong></div>
+                            </div>
+                            <p style="color: var(--color-text-dim); font-size: 0.82rem; line-height: 1.5; margin-top: 0.6rem;">Real-time database emergency override active. Automated LED beacons redirecting 45% of incoming traffic to West Gate D to prevent bottleneck.</p>
+                        `;
+                    }
+                    showToast('Command Center Mode: Emergency Database Protocols Active');
+                } else {
+                    document.body.classList.remove('command-center-active');
+                    if (mapViewer) {
+                        mapViewer.style.boxShadow = 'none';
+                        mapViewer.style.borderColor = 'var(--border-glass)';
+                    }
+                    document.querySelectorAll('.map-node').forEach(node => {
+                        const z = node.dataset.zone;
+                        const c = node.querySelector('circle');
+                        if (c) c.setAttribute('r', z === 'south' ? '12' : z === 'vip' || z === 'access' ? '8' : '10');
+                    });
+                    if (detailsCard) {
+                        detailsCard.innerHTML = `
+                            <h3>&#128205; Select a Stadium Zone</h3>
+                            <p style="color: var(--color-text-dim); font-size: 0.85rem; line-height: 1.5;">Click any glowing node on the interactive map to inspect real-time crowd density, wait times, acoustic levels, and get AI pathfinding directions.</p>
+                        `;
+                    }
+                    showToast('Standard Stadium Operations Mode Restored');
+                }
+            });
+        });
+    }
+
+    // ── MAP NODES ACCORDING TO DATABASE ──
+    function initMapNodes() {
+        document.querySelectorAll('.map-node').forEach(node => {
+            node.addEventListener('click', () => {
+                const zone = node.dataset.zone;
+                const info = ZONE_DETAILS[zone];
+                if (!info) return;
+                const statusColor = info.status === 'Optimal' ? 'var(--color-success)' : info.status === 'Warning' ? 'var(--color-warning)' : 'var(--color-danger)';
+                document.getElementById('zone-details-card').innerHTML = `
+                    <h3>${info.name}</h3>
+                    <span class="gate-badge ${info.status.toLowerCase()}" style="margin-bottom: 0.8rem; display: inline-block;">${info.status}</span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.8rem 0; font-size: 0.82rem;">
+                        <div><span style="color: var(--color-text-dim);">Density:</span> <strong style="color: ${statusColor};">${info.density}</strong></div>
+                        <div><span style="color: var(--color-text-dim);">Temperature:</span> <strong>${info.temp}</strong></div>
+                        <div><span style="color: var(--color-text-dim);">Air Quality:</span> <strong>${info.aqi}</strong></div>
+                        <div><span style="color: var(--color-text-dim);">Noise Level:</span> <strong>${info.noise}</strong></div>
+                    </div>
+                    <p style="color: var(--color-text-dim); font-size: 0.82rem; line-height: 1.5; margin-top: 0.6rem;">${info.desc}</p>
+                `;
+            });
+        });
+    }
+
+    // ── MAP FILTERS ACCORDING TO DATABASE ──
+    function initMapFilters() {
+        const filterMap = {
+            all: ['north', 'east', 'south', 'west', 'vip', 'access', 'shuttle'],
+            concourse: ['north', 'south', 'west', 'shuttle'],
+            seating: ['east', 'west'],
+            vip: ['vip', 'north'],
+            accessibility: ['access', 'west', 'shuttle']
+        };
+
+        const filterSummaries = {
+            all: {
+                title: '&#128205; All Stadium Zones Active (7 Database Records)',
+                badge: 'Optimal & Critical Nodes Shown',
+                desc: 'Displaying complete 3D stadium telemetry grid across 5 main gates, VIP Skybox, Sensory Hub, and EV Shuttle terminal.'
+            },
+            concourse: {
+                title: '&#128682; Concourse & Turnstile Database Filter',
+                badge: 'South Gate C at 91% Critical Density',
+                desc: 'Filtering 4 concourse hubs. South Gate C is currently experiencing a crowd surge (91% density, 25.8 min wait). North Gate A and West Gate D operating optimally under 32% density.'
+            },
+            seating: {
+                title: '&#127967;&#65039; Seating Bowls & Sector Database Filter',
+                badge: 'Lower Bowl East & West Active',
+                desc: 'Filtering seating sectors. East Stand (Sector 101-118) is under heavy load (72% density, 104 dB acoustic roar). West Stand family sector is calm (31% density, 72\u00B0F).'
+            },
+            vip: {
+                title: '&#127775; VIP Suites & Presidential Lounge Database Filter',
+                badge: 'Skybox VIP & North Gate Express Active',
+                desc: 'Filtering premium hospitality zones. Skybox VIP Lounge operating at 65% capacity with pristine air quality (AQI 15, 64 dB noise level). Private concierge active.'
+            },
+            accessibility: {
+                title: '&#9855;&#65039; Accessibility & Accommodations Database Filter',
+                badge: 'Sensory Hub & ADA Express Lanes Active',
+                desc: 'Filtering ADA accommodations. Central Sensory Hub operating at pristine optimal state (18% density, AQI 12, 42 dB quiet zone). West Gate D ADA priority lane has zero wait time.'
+            }
+        };
+
+        document.querySelectorAll('.map-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.dataset.filter || 'all';
+                const allowedZones = filterMap[filter] || filterMap.all;
+
+                document.querySelectorAll('.map-node').forEach(node => {
+                    const z = node.dataset.zone;
+                    const circle = node.querySelector('circle');
+                    if (allowedZones.includes(z)) {
+                        node.style.opacity = '1';
+                        node.style.pointerEvents = 'auto';
+                        if (circle) circle.style.filter = filter === 'all' ? 'none' : 'drop-shadow(0 0 14px var(--color-primary))';
+                    } else {
+                        node.style.opacity = '0.12';
+                        node.style.pointerEvents = 'none';
+                        if (circle) circle.style.filter = 'grayscale(100%)';
+                    }
+                });
+
+                const summary = filterSummaries[filter] || filterSummaries.all;
+                const detailsCard = document.getElementById('zone-details-card');
+                if (detailsCard) {
+                    detailsCard.innerHTML = `
+                        <h3>${summary.title}</h3>
+                        <span class="gate-badge optimal" style="margin-bottom: 0.8rem; display: inline-block;">${summary.badge}</span>
+                        <p style="color: var(--color-text-dim); font-size: 0.85rem; line-height: 1.6; margin-top: 0.4rem;">${summary.desc}</p>
+                    `;
+                }
+
+                showToast('Database Filter Applied: ' + btn.textContent.trim() + ' (' + allowedZones.length + ' zones filtered)');
+            });
+        });
+    }
+
+    // ── PROMPT CHIPS ──
+    function initPromptChips() {
+        document.querySelectorAll('.prompt-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const prompt = chip.dataset.prompt;
+                processAIQuery(prompt);
+            });
+        });
+    }
+
+    // ── CHAT ──
+    function initChatInput() {
+        document.getElementById('ai-input-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const field = document.getElementById('ai-input-field');
+            const val = field.value.trim();
+            if (!val) return;
+            processAIQuery(val);
+            field.value = '';
+        });
+    }
+
+    function addInitialChatMessage() {
+        const chatBody = document.getElementById('ai-chat-body');
+        chatBody.innerHTML = `
+            <div class="chat-bubble ai">
+                <span class="bubble-label">Nexus AI Concierge</span>
+                Welcome to Nexus 2026! I am your AI-powered stadium concierge. Ask me about navigation, food, accessibility, sustainability, or any live operations. I speak 8 languages.
+            </div>
+        `;
+    }
+
+    function processAIQuery(query) {
+        const chatBody = document.getElementById('ai-chat-body');
+        // User bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'chat-bubble user';
+        userBubble.innerHTML = `<span class="bubble-label">You</span>${escapeHTML(query)}`;
+        chatBody.appendChild(userBubble);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // Typing indicator
+        const typing = document.createElement('div');
+        typing.className = 'chat-bubble ai';
+        typing.id = 'typing-indicator';
+        typing.innerHTML = `<span class="bubble-label">Nexus AI</span><div class="typing-indicator"><span></span><span></span><span></span></div>`;
+        chatBody.appendChild(typing);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        // Determine response
+        setTimeout(() => {
+            const typingEl = document.getElementById('typing-indicator');
+            if (typingEl) typingEl.remove();
+            let responseKey = 'default';
+            const q = query.toLowerCase();
+            if (q.includes('route') || q.includes('sector') || q.includes('navigate') || q.includes('fastest')) responseKey = 'navigation';
+            else if (q.includes('wheelchair') || q.includes('sensory') || q.includes('ada') || q.includes('escort') || q.includes('pod')) responseKey = 'accessibility';
+            else if (q.includes('food') || q.includes('halal') || q.includes('gluten') || q.includes('vegan')) responseKey = 'food';
+            else if (q.includes('shuttle') || q.includes('ev ') || q.includes('transit') || q.includes('metro')) responseKey = 'shuttle';
+            else if (q.includes('carbon') || q.includes('sustain') || q.includes('green') || q.includes('solar')) responseKey = 'carbon';
+
+            const aiBubble = document.createElement('div');
+            aiBubble.className = 'chat-bubble ai';
+            aiBubble.innerHTML = `<span class="bubble-label">Nexus AI</span>${AI_RESPONSES[responseKey]}`;
+            chatBody.appendChild(aiBubble);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }, 1200);
+    }
+
+    function handleAIAction(query) {
+        document.querySelector('[data-tab="tab-map"]').click();
+        processAIQuery(query);
+    }
+
+    function handleAICrowdDiversion() {
+        handleAIAction('How do we solve the crowd surge at South Gate C right now?');
+    }
+
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ── GATES ──
+    function renderGates() {
+        const container = document.getElementById('gates-grid');
+        container.innerHTML = GATES_DATA.map(g => `
+            <div class="gate-card ${g.status.toLowerCase()}">
+                <div class="gate-header">
+                    <h4>${g.name}</h4>
+                    <span class="gate-badge ${g.status.toLowerCase()}">${g.status}</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--color-text-dim); margin-bottom: 0.3rem;">${g.type}</div>
+                <div class="gate-stat" style="color: ${g.status === 'Optimal' ? 'var(--color-success)' : g.status === 'Warning' ? 'var(--color-warning)' : 'var(--color-danger)'};">
+                    ${g.density}% <small>density</small>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--color-text-dim);">
+                    <span>Wait: ${g.wait} min</span>
+                    <span>Throughput: ${g.throughput.toLocaleString()}/hr</span>
+                </div>
+                <div class="gate-bar"><div class="gate-bar-fill ${g.status.toLowerCase()}" style="width: ${g.density}%;"></div></div>
+                <div class="gate-detail">${g.ada}</div>
+            </div>
+        `).join('');
+    }
+
+    // ── INCIDENTS ──
+    function renderIncidents() {
+        const container = document.getElementById('incidents-log');
+        container.innerHTML = INCIDENTS_DATA.map(inc => `
+            <div class="incident-item ${inc.severity.toLowerCase()}">
+                <div class="incident-header">
+                    <span class="incident-severity ${inc.severity.toLowerCase()}">${inc.severity} &bull; ${inc.category}</span>
+                    <span class="incident-time">${inc.time}</span>
+                </div>
+                <div class="incident-desc">${inc.desc}</div>
+                <div class="incident-action">${inc.status} &bull; ${inc.saved} min saved</div>
+            </div>
+        `).join('');
+    }
+
+    // ── TOAST ──
+    function showToast(msg) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    </script>
+</body>
+</html>

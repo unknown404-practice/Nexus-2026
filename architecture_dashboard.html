@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus 2026 | System Architecture & Relational Database Interactive Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128452;&#65039;</text></svg>">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0B0F1A;
+            --bg-secondary: #101626;
+            --bg-glass: rgba(16, 22, 38, 0.75);
+            --color-primary: #00F0FF;
+            --color-secondary: #BD00FF;
+            --color-accent: #FF3366;
+            --color-success: #00FF88;
+            --color-warning: #FFB800;
+            --color-danger: #FF3366;
+            --color-text: #F0F4FF;
+            --color-text-dim: #8F9BB3;
+            --border-glass: rgba(143, 155, 179, 0.18);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.4);
+            --font-main: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+            --header-h: 72px;
+        }
+
+        html { scroll-behavior: smooth; overflow-y: scroll !important; overflow-x: hidden !important; height: 100%; }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-primary);
+            color: var(--color-text);
+            height: 100%;
+            width: 100%;
+            overflow: hidden !important;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: var(--header-h);
+            background: rgba(11, 15, 26, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .brand-container { display: flex; align-items: center; gap: 1.5rem; }
+        .brand-logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon { font-size: 2rem; }
+        .brand-text h1 { font-size: 1.15rem; font-weight: 800; letter-spacing: 0.06em; color: var(--color-primary); line-height: 1.2; }
+        .brand-text p { font-size: 0.72rem; color: var(--color-text-dim); letter-spacing: 0.03em; }
+        .gdg-banner {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.25);
+            padding: 0.25rem 0.7rem; border-radius: 16px;
+            font-size: 0.7rem; font-weight: 700; color: var(--color-success);
+            margin-top: 0.4rem;
+        }
+
+        .live-indicator {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: 20px; padding: 0.35rem 0.8rem;
+            font-size: 0.72rem; font-weight: 700; color: var(--color-primary);
+            font-family: var(--font-mono); letter-spacing: 0.04em;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--color-success);
+            animation: pulse 1.8s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.5); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+        }
+
+        .header-actions { display: flex; align-items: center; gap: 0.8rem; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border: none; border-radius: 8px;
+            padding: 0.55rem 1rem;
+            color: #000; font-size: 0.8rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s;
+            font-family: var(--font-main);
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { box-shadow: 0 0 20px rgba(0,240,255,0.35); transform: translateY(-1px); }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 0.55rem 1rem;
+            color: var(--color-text-dim);
+            font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+            font-family: var(--font-main);
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .btn-secondary:hover { border-color: var(--color-primary); color: var(--color-text); }
+
+        /* ── MAIN LAYOUT ── */
+        .arch-container {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            min-height: calc(100vh - var(--header-h));
+        }
+
+        /* ── SIDEBAR ── */
+        .tables-sidebar {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-glass);
+            overflow-y: auto;
+            max-height: calc(100vh - var(--header-h) - 3rem);
+            position: sticky;
+            top: calc(var(--header-h) + 1.5rem);
+        }
+        .tables-sidebar::-webkit-scrollbar { width: 4px; }
+        .tables-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .tables-sidebar::-webkit-scrollbar-thumb { background: rgba(143,155,179,0.2); border-radius: 4px; }
+
+        .sidebar-heading {
+            font-size: 1.05rem; font-weight: 800; color: var(--color-primary);
+            margin-bottom: 0.2rem;
+        }
+        .sidebar-sub {
+            font-size: 0.78rem; color: var(--color-text-dim); margin-bottom: 0.6rem;
+        }
+
+        .table-nav-item {
+            background: rgba(16, 22, 38, 0.6);
+            border: 1px solid rgba(143, 155, 179, 0.2);
+            border-left: 4px solid transparent;
+            padding: 0.7rem 0.8rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            transform: none !important;
+        }
+        .table-nav-item:hover {
+            border-color: var(--color-primary);
+            border-left-color: var(--color-primary);
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+            transform: none !important;
+        }
+        .table-nav-item.active {
+            border-color: var(--color-primary);
+            border-left-color: var(--color-primary);
+            background: rgba(0, 240, 255, 0.12);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            transform: none !important;
+        }
+        .table-nav-info h4 {
+            font-size: 0.88rem; font-weight: 700; color: #FFF;
+            margin-bottom: 0.15rem; font-family: var(--font-mono);
+            line-height: 1.2;
+        }
+        .table-nav-info p {
+            font-size: 0.72rem; color: var(--color-text-dim); line-height: 1.3;
+        }
+        .badge-fk {
+            background: rgba(189, 0, 255, 0.2);
+            color: var(--color-secondary);
+            border: 1px solid var(--color-secondary);
+            font-size: 0.62rem; padding: 0.15rem 0.4rem;
+            border-radius: 4px; font-family: var(--font-mono);
+            font-weight: 600; white-space: nowrap; flex-shrink: 0;
+        }
+        .badge-fk.author {
+            background: rgba(0,255,136,0.2); color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        /* ── MAIN CONTENT ── */
+        .arch-main {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - var(--header-h) - 3rem);
+            padding-right: 0.3rem;
+        }
+        .arch-main::-webkit-scrollbar { width: 6px; }
+        .arch-main::-webkit-scrollbar-track { background: transparent; }
+        .arch-main::-webkit-scrollbar-thumb { background: rgba(143,155,179,0.2); border-radius: 4px; }
+
+        .glass-panel {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-glass);
+        }
+
+        /* ── SCHEMA VIEWER ── */
+        .schema-viewer-card {
+            padding: 1.5rem;
+        }
+        .schema-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 1rem;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .schema-title h2 {
+            font-size: 1.4rem; font-weight: 800; color: var(--color-primary);
+            font-family: var(--font-mono); line-height: 1.2;
+        }
+        .schema-title p {
+            color: var(--color-text-dim); font-size: 0.85rem; margin-top: 0.3rem;
+        }
+        .record-badge {
+            font-family: var(--font-mono); font-weight: 700;
+            background: rgba(0, 240, 255, 0.12); color: var(--color-primary);
+            padding: 0.4rem 0.8rem; border-radius: 20px;
+            border: 1px solid var(--color-primary);
+            font-size: 0.78rem; white-space: nowrap;
+        }
+
+        .ddl-label, .data-label {
+            font-size: 0.85rem; font-weight: 700; color: var(--color-text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .ddl-box {
+            background: #0A0E17;
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: #00FF88;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            line-height: 1.6;
+            white-space: pre;
+        }
+        .sql-keyword { color: #00F0FF; font-weight: 700; }
+        .sql-type { color: #FF3366; }
+        .sql-const { color: #BD00FF; }
+
+        /* ── DATA GRID ── */
+        .data-grid-container {
+            overflow-x: auto;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            background: rgba(10, 14, 23, 0.7);
+        }
+        .data-grid {
+            width: 100%; border-collapse: collapse;
+            font-size: 0.82rem; text-align: left;
+        }
+        .data-grid th {
+            background: rgba(16, 22, 38, 0.9);
+            color: var(--color-primary);
+            padding: 0.7rem 0.9rem;
+            border-bottom: 2px solid var(--color-primary);
+            font-family: var(--font-mono);
+            font-weight: 700; font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .data-grid td {
+            padding: 0.7rem 0.9rem;
+            border-bottom: 1px solid rgba(143, 155, 179, 0.12);
+            color: var(--color-text);
+            white-space: nowrap;
+        }
+        .data-grid tr:hover td {
+            background: rgba(0, 240, 255, 0.06);
+        }
+
+        /* ── GRAPH ── */
+        .graph-panel {
+            padding: 1.5rem;
+        }
+        .graph-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;
+        }
+        .graph-header h3 { font-size: 1.25rem; font-weight: 800; color: #FFF; }
+        .graph-header p { font-size: 0.85rem; color: var(--color-text-dim); margin-top: 0.2rem; }
+        .graph-legend {
+            display: flex; gap: 1rem; font-size: 0.75rem; color: var(--color-text-dim);
+        }
+        .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+        .graph-svg-container {
+            position: relative;
+            width: 100%;
+            min-height: 500px;
+            background: #0A0E17;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+        }
+
+        /* ── SIMULATOR ── */
+        .sim-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-glass);
+            padding-top: 1.2rem;
+        }
+        .sim-section h3 { font-size: 1.15rem; font-weight: 800; color: var(--color-primary); }
+        .sim-section > p { font-size: 0.85rem; color: var(--color-text-dim); margin-top: 0.2rem; margin-bottom: 1rem; }
+
+        .sim-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .sim-card {
+            background: rgba(16, 22, 38, 0.8);
+            border: 1px solid rgba(143, 155, 179, 0.2);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            display: flex; flex-direction: column;
+            justify-content: space-between;
+            gap: 0.8rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transform: none !important;
+        }
+        .sim-card:hover {
+            border-color: var(--color-success);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+            transform: none !important;
+        }
+        .sim-card h4 { font-size: 1rem; font-weight: 700; color: #FFF; }
+        .sim-card p { font-size: 0.82rem; color: var(--color-text-dim); line-height: 1.4; }
+
+        .sql-log-terminal {
+            background: #06090F;
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: #00FF88;
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 1.2rem;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+        .sql-log-terminal::-webkit-scrollbar { width: 4px; }
+        .sql-log-terminal::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.2); border-radius: 4px; }
+        .log-line { margin-bottom: 0.4rem; line-height: 1.4; }
+        .log-time { color: #8F9BB3; }
+        .log-sql { color: #00F0FF; }
+        .log-status { color: #00FF88; font-weight: bold; }
+
+        /* ── TOAST ── */
+        .toast-container {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            z-index: 1000;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .toast {
+            background: rgba(16,22,38,0.95);
+            border: 1px solid var(--color-success);
+            border-radius: var(--radius-md);
+            padding: 0.7rem 1rem;
+            font-size: 0.82rem;
+            color: var(--color-text);
+            backdrop-filter: blur(12px);
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px); } }
+
+        /* ── SVG GRAPH NODES ── */
+        .graph-node { cursor: pointer; }
+        .graph-node rect { transition: stroke-width 0.2s ease, filter 0.25s ease, fill 0.2s ease; }
+        .graph-node:hover rect { stroke-width: 4; filter: drop-shadow(0 0 18px currentColor); }
+        .graph-node text { transition: font-size 0.2s ease, font-weight 0.2s ease; pointer-events: none; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .arch-container { grid-template-columns: 1fr; }
+            .tables-sidebar {
+                position: static;
+                max-height: none;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .table-nav-item { flex: 1; min-width: 200px; }
+        }
+
+        /* Universal Anti-Earthquake / Shake Prevention on Hover across all HTML cards */
+        .table-nav-item, .table-nav-item:hover, .table-nav-item.active,
+        .sim-card, .sim-card:hover,
+        .glass-panel, .glass-panel:hover,
+        .btn-primary:hover, .btn-secondary:hover {
+            transform: none !important;
+            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="brand-container">
+            <div class="brand-logo">
+                <div class="logo-icon">&#128452;&#65039;</div>
+                <div class="brand-text">
+                    <h1>NEXUS 2026 ARCHITECTURE</h1>
+                    <p>Relational Database & GenAI System Architecture Dashboard</p>
+                    <div class="gdg-banner">&#128100; Author: Ranadeep Saha &nbsp;|&nbsp; &#127942; Member of Google Developer Group (GDG)</div>
+                </div>
+            </div>
+            <div class="live-indicator">
+                <div class="pulse-dot"></div>
+                <span>SQL WAL MODE &bull; 9 TABLES VERIFIED</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a href="index.html" class="btn-secondary" style="text-decoration: none;">&#11013;&#65039; Return to Main Portal</a>
+            <button class="btn-primary" onclick="resetDatabaseSimulation()">&#128260; Reset Database State</button>
+        </div>
+    </header>
+
+    <main class="arch-container">
+        <aside class="tables-sidebar">
+            <h3 class="sidebar-heading">&#128452;&#65039; Normalized Schema (9 Tables)</h3>
+            <p class="sidebar-sub">Click any table below to inspect DDL, foreign key relations, and live seeded records:</p>
+
+            <div class="table-nav-item" onclick="selectTable('stadium_system_metadata', this)">
+                <div class="table-nav-info">
+                    <h4>stadium_system_metadata</h4>
+                    <p>System Attribution & Author Metadata</p>
+                </div>
+                <span class="badge-fk author">Author GDG</span>
+            </div>
+            <div class="table-nav-item active" onclick="selectTable('tournament_fixtures', this)">
+                <div class="table-nav-info">
+                    <h4>tournament_fixtures</h4>
+                    <p>Master Match Schedules & Capacities</p>
+                </div>
+                <span class="badge-fk">PK Master</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('stadium_gates', this)">
+                <div class="table-nav-info">
+                    <h4>stadium_gates</h4>
+                    <p>Turnstile Throughput & Queue SLAs</p>
+                </div>
+                <span class="badge-fk">FK &#8594; fixtures</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('stadium_zones', this)">
+                <div class="table-nav-info">
+                    <h4>stadium_zones</h4>
+                    <p>Concourse Thermal, Acoustic & AQI</p>
+                </div>
+                <span class="badge-fk">FK &#8594; fixtures</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('genai_knowledge_graph', this)">
+                <div class="table-nav-info">
+                    <h4>genai_knowledge_graph</h4>
+                    <p>8-Language Neural Prompts & Rules</p>
+                </div>
+                <span class="badge-fk">LLM Core</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('operational_incidents_log', this)">
+                <div class="table-nav-info">
+                    <h4>operational_incidents_log</h4>
+                    <p>Autonomous AI Intervention Audit Trail</p>
+                </div>
+                <span class="badge-fk">FK &#8594; fixtures</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('sustainability_metrics_log', this)">
+                <div class="table-nav-info">
+                    <h4>sustainability_metrics_log</h4>
+                    <p>Solar kWh, HVAC Savings & CO2 Offsets</p>
+                </div>
+                <span class="badge-fk">FK &#8594; fixtures</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('accessibility_accommodations', this)">
+                <div class="table-nav-info">
+                    <h4>accessibility_accommodations</h4>
+                    <p>Sensory Room Pods & Escort Dispatch</p>
+                </div>
+                <span class="badge-fk">FK &#8594; fixtures</span>
+            </div>
+            <div class="table-nav-item" onclick="selectTable('autonomous_transit_shuttles', this)">
+                <div class="table-nav-info">
+                    <h4>autonomous_transit_shuttles</h4>
+                    <p>EV Shuttle Docking & Battery KPIs</p>
+                </div>
+                <span class="badge-fk">IoT Fleet</span>
+            </div>
+        </aside>
+
+        <section class="arch-main">
+            <div class="glass-panel schema-viewer-card">
+                <div class="schema-header">
+                    <div class="schema-title">
+                        <h2 id="current-table-name">tournament_fixtures</h2>
+                        <p id="current-table-desc">Master table defining World Cup match metadata, stadium capacities, and security readiness levels.</p>
+                    </div>
+                    <span id="current-table-records" class="record-badge">3 Active Records</span>
+                </div>
+
+                <div class="ddl-label">&#128220; SQL Data Definition Language (DDL Statement):</div>
+                <div id="ddl-container" class="ddl-box"></div>
+
+                <div class="data-label">&#128202; Live SQLite Table Records (<code style="color: var(--color-primary); font-family: var(--font-mono);">SELECT * FROM table</code>):</div>
+                <div class="data-grid-container">
+                    <table class="data-grid">
+                        <thead id="data-grid-head"></thead>
+                        <tbody id="data-grid-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-panel graph-panel">
+                <div class="graph-header">
+                    <div>
+                        <h3>&#127760; Complete System Architecture & Foreign Key Network Graph</h3>
+                        <p>Hover over any node to inspect data routing, foreign key relationships, and automated GenAI trigger loops.</p>
+                    </div>
+                    <div class="graph-legend">
+                        <div class="legend-item"><span class="legend-dot" style="background: #00F0FF;"></span> Master Fixture</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #BD00FF;"></span> Sensor Tables</div>
+                        <div class="legend-item"><span class="legend-dot" style="background: #00FF88;"></span> Action Logs</div>
+                    </div>
+                </div>
+
+                <div class="graph-svg-container">
+                    <svg id="arch-svg" viewBox="0 0 1000 520" style="width: 100%; height: 100%;">
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#8F9BB3" />
+                            </marker>
+                            <marker id="arrow-cyan" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#00F0FF" />
+                            </marker>
+                            <marker id="arrow-green" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#00FF88" />
+                            </marker>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- Edges -->
+                        <path d="M 500 110 L 220 250" stroke="#8F9BB3" stroke-width="2.5" fill="none" marker-end="url(#arrow)" />
+                        <text x="330" y="170" fill="#00F0FF" font-size="11" font-family="monospace">FK: match_id</text>
+
+                        <path d="M 500 110 L 500 250" stroke="#8F9BB3" stroke-width="2.5" fill="none" marker-end="url(#arrow)" />
+                        <text x="510" y="180" fill="#00F0FF" font-size="11" font-family="monospace">FK: match_id</text>
+
+                        <path d="M 500 110 L 780 250" stroke="#8F9BB3" stroke-width="2.5" fill="none" marker-end="url(#arrow)" />
+                        <text x="660" y="170" fill="#00F0FF" font-size="11" font-family="monospace">FK: match_id</text>
+
+                        <path d="M 220 280 C 350 380, 650 380, 780 280" stroke="#FF3366" stroke-width="3" stroke-dasharray="6,6" fill="none" marker-end="url(#arrow)" />
+                        <text x="440" y="365" fill="#FF3366" font-size="12" font-weight="bold" font-family="monospace">&#9889; Trigger: Density &gt; 85%</text>
+
+                        <path d="M 500 300 L 780 430" stroke="#00FF88" stroke-width="2" fill="none" marker-end="url(#arrow-green)" />
+                        <text x="630" y="375" fill="#00FF88" font-size="11" font-family="monospace">Join: Sensory Pods</text>
+
+                        <path d="M 500 300 L 500 430" stroke="#00FF88" stroke-width="2" fill="none" marker-end="url(#arrow-green)" />
+                        <text x="510" y="370" fill="#00FF88" font-size="11" font-family="monospace">Log: Match KPIs</text>
+
+                        <path d="M 220 430 L 220 300" stroke="#00F0FF" stroke-width="3" fill="none" marker-end="url(#arrow-cyan)" />
+                        <text x="70" y="370" fill="#00F0FF" font-size="11" font-weight="bold" font-family="monospace">SQL UPDATE: Load Balance</text>
+
+                        <!-- Nodes -->
+                        <g class="graph-node" transform="translate(500, 80)" onclick="selectTable('tournament_fixtures', document.querySelectorAll('.table-nav-item')[1])">
+                            <rect x="-110" y="-30" width="220" height="60" rx="12" fill="#0A0E17" stroke="#00F0FF" stroke-width="3" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="13" font-weight="bold" text-anchor="middle">tournament_fixtures</text>
+                            <text x="0" y="15" fill="#00F0FF" font-size="10" font-family="monospace" text-anchor="middle">Match Master [3 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(220, 275)" onclick="selectTable('stadium_gates', document.querySelectorAll('.table-nav-item')[2])">
+                            <rect x="-105" y="-30" width="210" height="60" rx="12" fill="#101626" stroke="#BD00FF" stroke-width="2.5" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="13" font-weight="bold" text-anchor="middle">stadium_gates</text>
+                            <text x="0" y="15" fill="#BD00FF" font-size="10" font-family="monospace" text-anchor="middle">Turnstiles &amp; SLAs [5 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(500, 275)" onclick="selectTable('stadium_zones', document.querySelectorAll('.table-nav-item')[3])">
+                            <rect x="-105" y="-30" width="210" height="60" rx="12" fill="#101626" stroke="#BD00FF" stroke-width="2.5" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="13" font-weight="bold" text-anchor="middle">stadium_zones</text>
+                            <text x="0" y="15" fill="#BD00FF" font-size="10" font-family="monospace" text-anchor="middle">Thermal &amp; Acoustic [8 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(780, 275)" onclick="selectTable('operational_incidents_log', document.querySelectorAll('.table-nav-item')[5])">
+                            <rect x="-115" y="-30" width="230" height="60" rx="12" fill="#101626" stroke="#FF3366" stroke-width="2.5" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="12" font-weight="bold" text-anchor="middle">operational_incidents_log</text>
+                            <text x="0" y="15" fill="#FF3366" font-size="10" font-family="monospace" text-anchor="middle">AI Audit Trail [4 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(220, 455)" onclick="selectTable('genai_knowledge_graph', document.querySelectorAll('.table-nav-item')[4])">
+                            <rect x="-115" y="-30" width="230" height="60" rx="12" fill="#0A0E17" stroke="#FF007A" stroke-width="3" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="12" font-weight="bold" text-anchor="middle">genai_knowledge_graph</text>
+                            <text x="0" y="15" fill="#FF007A" font-size="10" font-family="monospace" text-anchor="middle">8-Language Prompts [3 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(500, 455)" onclick="selectTable('sustainability_metrics_log', document.querySelectorAll('.table-nav-item')[6])">
+                            <rect x="-110" y="-30" width="220" height="60" rx="12" fill="#101626" stroke="#00FF88" stroke-width="2.5" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="12" font-weight="bold" text-anchor="middle">sustainability_metrics_log</text>
+                            <text x="0" y="15" fill="#00FF88" font-size="10" font-family="monospace" text-anchor="middle">Solar &amp; HVAC [4 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(780, 455)" onclick="selectTable('accessibility_accommodations', document.querySelectorAll('.table-nav-item')[7])">
+                            <rect x="-115" y="-30" width="230" height="60" rx="12" fill="#101626" stroke="#00FF88" stroke-width="2.5" filter="url(#glow)" />
+                            <text x="0" y="-5" fill="#FFF" font-size="12" font-weight="bold" text-anchor="middle">accessibility_accommodations</text>
+                            <text x="0" y="15" fill="#00FF88" font-size="10" font-family="monospace" text-anchor="middle">ADA Pod &amp; Escorts [3 rows]</text>
+                        </g>
+
+                        <g class="graph-node" transform="translate(60, 275)" onclick="selectTable('autonomous_transit_shuttles', document.querySelectorAll('.table-nav-item')[8])">
+                            <rect x="-55" y="-30" width="110" height="60" rx="12" fill="#101626" stroke="#00A3FF" stroke-width="2" />
+                            <text x="0" y="-5" fill="#FFF" font-size="10" font-weight="bold" text-anchor="middle">transit_shuttles</text>
+                            <text x="0" y="15" fill="#00A3FF" font-size="9" font-family="monospace" text-anchor="middle">EV Fleet [4 rows]</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="sim-section">
+                    <h3>&#9889; Autonomous GenAI SQL Transaction Engine Simulator</h3>
+                    <p>Click below to execute atomic SQL transactions (<code style="color: var(--color-primary); font-family: var(--font-mono);">BEGIN TRANSACTION ... COMMIT;</code>) across the normalized tables and verify live state mutations:</p>
+
+                    <div class="sim-actions-grid">
+                        <div class="sim-card">
+                            <div>
+                                <h4 style="color: #FF3366;">&#128680; Gate C &#8594; Gate D Load Balance</h4>
+                                <p>Gate C density at 91% (<code style="color: #FF3366;">Critical</code>). Executes atomic <code>UPDATE</code> diverting 45% of incoming traffic to Gate D (<code style="color: var(--color-success);">Optimal</code>) and logs audit trail.</p>
+                            </div>
+                            <button class="btn-primary" onclick="executeSqlSimulation('load_balance')">&#9889; Execute Atomic SQL Transaction</button>
+                        </div>
+                        <div class="sim-card">
+                            <div>
+                                <h4 style="color: #00FF88;">&#128716;&#65039; Sensory Quiet Room Pod Booking</h4>
+                                <p>Fan requests ADA relaxation pod. Joins <code>stadium_zones</code> with <code>accessibility_accommodations</code> and assigns Volunteer Escort #42 (<code style="color: var(--color-success);">Sarah M.</code>).</p>
+                            </div>
+                            <button class="btn-primary" onclick="executeSqlSimulation('ada_booking')">&#9855; Execute ADA SQL Reservation</button>
+                        </div>
+                        <div class="sim-card">
+                            <div>
+                                <h4 style="color: #00F0FF;">&#127793; Solar & AI HVAC Microgrid Log</h4>
+                                <p>Inserts real-time telemetry row into <code>sustainability_metrics_log</code> recording 35,400 kWh solar generation and 19.2% HVAC savings.</p>
+                            </div>
+                            <button class="btn-primary" onclick="executeSqlSimulation('sustainability_log')">&#9728;&#65039; Insert Telemetry SQL Record</button>
+                        </div>
+                    </div>
+
+                    <div class="sql-log-terminal" id="sql-log-output">
+                        <div class="log-line"><span class="log-time">[System Init]</span> <span class="log-status">CONNECTED</span> to SQLite database <span class="log-sql">nexus_stadium_2026.db</span> (PRAGMA foreign_keys = ON; WAL mode active).</div>
+                        <div class="log-line"><span class="log-time">[System Init]</span> All 9 normalized tables verified sequentially with 38 seeded records. Ready for user query execution.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        const SCHEMA_DATA = {
+            stadium_system_metadata: {
+                desc: "Formal system attribution, author verification (Ranadeep Saha, Member of GDG), and architectural version control.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> stadium_system_metadata (\n    metadata_key <span class="sql-type">VARCHAR(64) PRIMARY KEY</span>,\n    metadata_value <span class="sql-type">TEXT NOT NULL</span>,\n    category <span class="sql-type">VARCHAR(64) NOT NULL</span>\n);',
+                columns: ["metadata_key", "metadata_value", "category"],
+                rows: [
+                    ["system_author", "Ranadeep Saha", "Author & Lead Architect"],
+                    ["author_affiliation", "Member of Google Developer Group (GDG)", "Professional Organization"],
+                    ["system_title", "Nexus 2026: Autonomous AI & Relational IoT Database Engine for World Cup", "Project Specification"],
+                    ["database_version", "Production v2.0 (16-Session Multi-City Schema)", "System Release"],
+                    ["last_certified", "July 2026", "Certification Date"]
+                ]
+            },
+            tournament_fixtures: {
+                desc: "Master table defining World Cup match schedules, stadium capacities, and security readiness levels.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> tournament_fixtures (\n    match_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    title <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    stadium_name <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    kick_off_time <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    attendance_count <span class="sql-type">INTEGER NOT NULL</span>,\n    max_capacity <span class="sql-type">INTEGER NOT NULL</span>,\n    security_level <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    renewable_energy_pct <span class="sql-type">FLOAT NOT NULL</span>\n);',
+                columns: ["match_id", "title", "stadium_name", "kick_off_time", "attendance_count", "max_capacity", "security_level", "renewable_energy_pct"],
+                rows: [
+                    ["match_01", "USA vs Brazil - Group A Quarterfinal", "MetLife Stadium (NY/NJ)", "June 24, 2026 - 19:30 EST", 81240, 82500, "Level 2 (High Readiness)", "84.0%"],
+                    ["match_02", "Mexico vs Germany - Group B Semifinal", "Estadio Azteca (Mexico City)", "July 02, 2026 - 18:00 CST", 86400, 87523, "Level 1 (Standard Operations)", "91.0%"],
+                    ["match_03", "Canada vs France - Group C Knockout", "BMO Field (Toronto)", "June 28, 2026 - 20:00 EST", 44800, 45000, "Level 1 (Standard Operations)", "100.0%"]
+                ]
+            },
+            stadium_gates: {
+                desc: "Turnstile IoT sensor telemetry tracking throughput, queue wait times, and crowd density percentages.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> stadium_gates (\n    gate_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    match_id <span class="sql-type">VARCHAR(32)</span>,\n    name <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    gate_type <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    throughput_hr <span class="sql-type">INTEGER NOT NULL</span>,\n    density_pct <span class="sql-type">INTEGER NOT NULL</span> <span class="sql-const">CHECK(density_pct BETWEEN 0 AND 100)</span>,\n    wait_time_mins <span class="sql-type">FLOAT NOT NULL</span>,\n    ada_status <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    status_flag <span class="sql-type">VARCHAR(32) NOT NULL</span> <span class="sql-const">CHECK(status_flag IN (\'Optimal\', \'Warning\', \'Critical\'))</span>,\n    <span class="sql-keyword">FOREIGN KEY</span> (match_id) <span class="sql-keyword">REFERENCES</span> tournament_fixtures(match_id)\n);',
+                columns: ["gate_id", "match_id", "name", "gate_type", "throughput_hr", "density_pct", "wait_time_mins", "ada_status", "status_flag"],
+                rows: [
+                    ["gate_a", "match_01", "North Gate A (Main VIP & Media)", "VIP Express", 1420, "24%", 3.2, "100% ADA Express Lanes Active", "Optimal"],
+                    ["gate_b", "match_01", "East Gate B (General Admission)", "General Admission", 3890, "72%", 14.1, "ADA Elevator B2 Under High Load", "Warning"],
+                    ["gate_c", "match_01", "South Gate C (Transit & Metro Hub)", "Metro Transit Hub", 4950, "91%", 25.8, "Assisted Shuttle Required", "Critical"],
+                    ["gate_d", "match_01", "West Gate D (Family & Accessibility Hub)", "Accessibility & Family", 1850, "31%", 4.0, "Zero Wait Priority Access", "Optimal"],
+                    ["gate_vip", "match_01", "FIFA Delegation & VIP Gate E", "Presidential VIP", 420, "12%", 1.1, "Private Concierge Active", "Optimal"]
+                ]
+            },
+            stadium_zones: {
+                desc: "Real-time concourse sensors measuring ambient temperature, acoustic decibel noise levels, and Air Quality Index (AQI).",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> stadium_zones (\n    zone_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    match_id <span class="sql-type">VARCHAR(32)</span>,\n    name <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    category <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    coord_x <span class="sql-type">FLOAT NOT NULL</span>,\n    coord_y <span class="sql-type">FLOAT NOT NULL</span>,\n    temp_f <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    aqi_index <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    noise_db <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    density_pct <span class="sql-type">INTEGER NOT NULL</span>,\n    status_flag <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    <span class="sql-keyword">FOREIGN KEY</span> (match_id) <span class="sql-keyword">REFERENCES</span> tournament_fixtures(match_id)\n);',
+                columns: ["zone_id", "match_id", "name", "category", "temp_f", "aqi_index", "noise_db", "density_pct", "status_flag"],
+                rows: [
+                    ["zone_n_concourse", "match_01", "North Upper Concourse", "concourse", "71\u00B0F", "AQI 22 (Optimal)", "78 dB", "42%", "Optimal"],
+                    ["zone_s_concourse", "match_01", "South Food Court & Plaza", "concourse", "76\u00B0F", "AQI 45 (Moderate)", "92 dB", "88%", "Critical"],
+                    ["zone_e_stands", "match_01", "East Lower Bowl (Sectors 101-118)", "seating", "73\u00B0F", "AQI 28 (Good)", "104 dB", "96%", "Warning"],
+                    ["zone_w_stands", "match_01", "West Lower Bowl (Sectors 119-136)", "seating", "72\u00B0F", "AQI 25 (Good)", "102 dB", "94%", "Optimal"],
+                    ["zone_vip_suite", "match_01", "Sky Box VIP Lounge & Club", "vip", "69\u00B0F", "AQI 15 (Pristine)", "64 dB", "65%", "Optimal"],
+                    ["zone_medical", "match_01", "Central First Aid & Sensory Room", "accessibility", "70\u00B0F", "AQI 12 (Pristine)", "42 dB", "18%", "Optimal"],
+                    ["zone_restroom_1", "match_01", "Smart Restroom Cluster S4", "amenity", "74\u00B0F", "AQI 58 (Requires Vent)", "80 dB", "84%", "Warning"],
+                    ["zone_shuttle_hub", "match_01", "EV Autonomous Shuttle Terminal", "transit", "73\u00B0F", "AQI 20 (Optimal)", "68 dB", "38%", "Optimal"]
+                ]
+            },
+            genai_knowledge_graph: {
+                desc: "Multi-lingual localized LLM responses across 8 languages with neural intent routing keywords and automated action codes.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> genai_knowledge_graph (\n    rule_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    intent_category <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    trigger_keywords <span class="sql-type">VARCHAR(256) NOT NULL</span>,\n    response_en <span class="sql-type">TEXT NOT NULL</span>,\n    response_es <span class="sql-type">TEXT NOT NULL</span>,\n    response_fr <span class="sql-type">TEXT NOT NULL</span>,\n    response_pt <span class="sql-type">TEXT NOT NULL</span>,\n    response_de <span class="sql-type">TEXT NOT NULL</span>,\n    response_ar <span class="sql-type">TEXT NOT NULL</span>,\n    response_ja <span class="sql-type">TEXT NOT NULL</span>,\n    response_ko <span class="sql-type">TEXT NOT NULL</span>,\n    action_code <span class="sql-type">VARCHAR(64) NOT NULL</span>\n);',
+                columns: ["rule_id", "intent_category", "trigger_keywords", "response_en", "response_es", "response_ja", "action_code"],
+                rows: [
+                    ["rule_nav_101", "navigation", "fastest,route,sector 112,navigate,concourse", "Fastest route to Sector 112: Enter via West Gate D (4-min wait) and take Express Corridor W-12.", "Ruta m\u00E1s r\u00E1pida al Sector 112: Ingrese por la Puerta Oeste D (4 min de espera).", "\u30BB\u30AF\u30BF\u30FC112\u3078\u306E\u6700\u901F\u30EB\u30FC\u30C8\uFF1A\u897F\u30B2\u30FC\u30C8D\uFF08\u5F85\u3061\u6642\u95934\u5206\uFF09\u304B\u3089\u5165\u5834\u3057\u3066\u304F\u3060\u3055\u3044\u3002", "highlight_route_west"],
+                    ["rule_ada_102", "accessibility", "wheelchair,sensory,quiet,ada,elevator,escort", "ADA Sensory Quiet Room Pod #3 is available at North Zone 25. Soundproof walls active. Elevator E2 has zero wait.", "La Sala de Tranquilidad Sensorial ADA Pod #3 est\u00E1 disponible en la Zona Norte 25.", "ADA\u30BB\u30F3\u30B5\u30EA\u30FC\u30FB\u30AF\u30EF\u30A4\u30A8\u30C3\u30C8\u30EB\u30FC\u30E0 Pod #3\u304C\u30CE\u30FC\u30B8\u30E7\u30F325\u3067\u5229\u7528\u53EF\u80FD\u3067\u3059\u3002", "reserve_sensory_pod"],
+                    ["rule_food_103", "concessions", "food,halal,vegan,gluten,concession,order,drink", "Halal & Gluten-Free Hub: Global Gourmet Sector 108 (2-min queue). Place express QR order now for Locker B4!", "Comida Halal y Sin Gluten: Sector Gourmet 108 (2 min de fila).", "\u30CF\u30E9\u30FC\u30EB\uFF06\u30B0\u30EB\u30C6\u30F3\u30D5\u30EA\u30FC\u62E0\u70B9\uFF1A\u30B0\u30ED\u30FC\u30D0\u30EB\u30B0\u30EB\u30E1\u30BB\u30AF\u30BF\u30FC108\uFF08\u5F85\u3061\u6642\u95932\u5206\uFF09\u3002", "place_express_order"]
+                ]
+            },
+            operational_incidents_log: {
+                desc: "Audit log of all autonomous GenAI interventions including crowd diversions, medical dispatch, and elevator balancing.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> operational_incidents_log (\n    incident_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    match_id <span class="sql-type">VARCHAR(32)</span>,\n    timestamp <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    severity <span class="sql-type">VARCHAR(32) NOT NULL</span> <span class="sql-const">CHECK(severity IN (\'HIGH\', \'MEDIUM\', \'LOW\'))</span>,\n    category <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    location_name <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    description <span class="sql-type">TEXT NOT NULL</span>,\n    ai_autonomous_action <span class="sql-type">TEXT NOT NULL</span>,\n    status <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    time_saved_mins <span class="sql-type">INTEGER NOT NULL</span>,\n    <span class="sql-keyword">FOREIGN KEY</span> (match_id) <span class="sql-keyword">REFERENCES</span> tournament_fixtures(match_id)\n);',
+                columns: ["incident_id", "timestamp", "severity", "category", "location_name", "ai_autonomous_action", "status", "time_saved_mins"],
+                rows: [
+                    ["inc_101", "19:42:15 EST", "HIGH", "Crowd Bottleneck", "South Concourse Gate C Plaza", "Diverted 45% of incoming crowd to West Gate D via synchronized digital wayfinding beacons.", "IN_PROGRESS", 18],
+                    ["inc_102", "19:35:00 EST", "MEDIUM", "Accessibility Request", "East Sector 112 Wheelchair Bay", "Rerouted 14 wheelchair guests to VIP Elevator E2 with personal volunteer escort dispatch.", "RESOLVED", 12],
+                    ["inc_103", "19:20:10 EST", "LOW", "Energy Optimization", "North Concourse Lighting & HVAC Grid", "Dimmed LED flood light bank 3 and reduced HVAC cooling load in empty auxiliary zones.", "AUTOMATED", 8],
+                    ["inc_104", "19:10:05 EST", "HIGH", "Medical Dispatch", "West Stand Sector 128, Row 14", "Dispatched nearest paramedic team equipped with cooling kit within 2 mins.", "RESOLVED", 3]
+                ]
+            },
+            sustainability_metrics_log: {
+                desc: "Time-series logging of solar generation, AI HVAC ventilation efficiency, water recycling, and carbon offset tons.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> sustainability_metrics_log (\n    log_id <span class="sql-type">INTEGER PRIMARY KEY AUTOINCREMENT</span>,\n    match_id <span class="sql-type">VARCHAR(32)</span>,\n    timestamp <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    solar_kwh <span class="sql-type">FLOAT NOT NULL</span>,\n    hvac_reduction_pct <span class="sql-type">FLOAT NOT NULL</span>,\n    water_recycled_l <span class="sql-type">FLOAT NOT NULL</span>,\n    waste_diverted_pct <span class="sql-type">FLOAT NOT NULL</span>,\n    carbon_offset_tons <span class="sql-type">FLOAT NOT NULL</span>,\n    <span class="sql-keyword">FOREIGN KEY</span> (match_id) <span class="sql-keyword">REFERENCES</span> tournament_fixtures(match_id)\n);',
+                columns: ["log_id", "match_id", "timestamp", "solar_kwh", "hvac_reduction_pct", "water_recycled_l", "waste_diverted_pct", "carbon_offset_tons"],
+                rows: [
+                    [1, "match_01", "19:00 EST", 35200.0, "18.4%", "41,000 L", "94.2%", "120.5 Tons"],
+                    [2, "match_01", "19:15 EST", 34950.0, "18.4%", "41,500 L", "94.3%", "123.0 Tons"],
+                    [3, "match_01", "19:30 EST", 34820.0, "18.4%", "42,000 L", "94.2%", "125.8 Tons"],
+                    [4, "match_01", "19:45 EST", 34600.0, "18.5%", "42,500 L", "94.4%", "128.5 Tons"]
+                ]
+            },
+            accessibility_accommodations: {
+                desc: "Tracking ADA wheelchair bays, neurodivergent sensory quiet room pod reservations, and assigned volunteer escorts.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> accessibility_accommodations (\n    booking_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    match_id <span class="sql-type">VARCHAR(32)</span>,\n    fan_id <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    service_type <span class="sql-type">VARCHAR(64) NOT NULL</span>,\n    location_name <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    pod_or_seat_number <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    volunteer_assigned <span class="sql-type">VARCHAR(64)</span>,\n    status <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    timestamp <span class="sql-type">VARCHAR(32) NOT NULL</span>,\n    <span class="sql-keyword">FOREIGN KEY</span> (match_id) <span class="sql-keyword">REFERENCES</span> tournament_fixtures(match_id)\n);',
+                columns: ["booking_id", "match_id", "fan_id", "service_type", "location_name", "pod_or_seat_number", "volunteer_assigned", "status"],
+                rows: [
+                    ["book_ada_01", "match_01", "FAN-US-8892", "Sensory Quiet Room Pod", "North Zone 25 Sensory Hub", "Pod #3 (Active)", "Volunteer Escort #42 (Sarah M.)", "Confirmed"],
+                    ["book_ada_02", "match_01", "FAN-BR-1142", "ADA Wheelchair Bay & Elevator", "West Lower Bowl Sector 119", "Bay W-14", "Volunteer Escort #18 (Carlos R.)", "Active Escort"],
+                    ["book_ada_03", "match_01", "FAN-DE-4412", "Multi-Lingual Audio Description", "East Lower Bowl Sector 108", "Headphone Stream CH-2", "Autonomous AI Audio Stream", "Streaming Live"]
+                ]
+            },
+            autonomous_transit_shuttles: {
+                desc: "IoT fleet monitoring for autonomous electric vehicle (EV) shuttles connecting the stadium plaza with metro rail hubs.",
+                ddl: '<span class="sql-keyword">CREATE TABLE IF NOT EXISTS</span> autonomous_transit_shuttles (\n    shuttle_id <span class="sql-type">VARCHAR(32) PRIMARY KEY</span>,\n    hub_location <span class="sql-type">VARCHAR(128) NOT NULL</span>,\n    battery_pct <span class="sql-type">INTEGER NOT NULL</span>,\n    total_capacity_seats <span class="sql-type">INTEGER NOT NULL</span>,\n    available_seats <span class="sql-type">INTEGER NOT NULL</span>,\n    next_departure_mins <span class="sql-type">INTEGER NOT NULL</span>,\n    status <span class="sql-type">VARCHAR(32) NOT NULL</span>\n);',
+                columns: ["shuttle_id", "hub_location", "battery_pct", "total_capacity_seats", "available_seats", "next_departure_mins", "status"],
+                rows: [
+                    ["shuttle_ev_01", "Shuttle Terminal S1 (South Plaza)", "96%", 24, 18, 5, "Docked & Ready"],
+                    ["shuttle_ev_02", "Shuttle Terminal S1 (South Plaza)", "88%", 24, 12, 10, "Boarding"],
+                    ["shuttle_ev_03", "West Gate D ADA Priority Terminal", "100%", 12, 8, 2, "Priority ADA Ready"],
+                    ["shuttle_ev_04", "North VIP Concourse Hub", "92%", 16, 16, 15, "Reserved for Convoy"]
+                ]
+            }
+        };
+
+        let currentActiveTable = 'tournament_fixtures';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderTableDetails('tournament_fixtures');
+        });
+
+        function selectTable(tableName, navElement) {
+            document.querySelectorAll('.table-nav-item').forEach(el => el.classList.remove('active'));
+            if (navElement) navElement.classList.add('active');
+            currentActiveTable = tableName;
+            renderTableDetails(tableName);
+        }
+
+        function renderTableDetails(tableName) {
+            const data = SCHEMA_DATA[tableName];
+            if (!data) return;
+
+            document.getElementById('current-table-name').innerText = tableName;
+            document.getElementById('current-table-desc').innerText = data.desc;
+            document.getElementById('current-table-records').innerText = data.rows.length + ' Active Records';
+            document.getElementById('ddl-container').innerHTML = data.ddl;
+
+            const thead = document.getElementById('data-grid-head');
+            thead.innerHTML = '<tr>' + data.columns.map(c => '<th>' + c + '</th>').join('') + '</tr>';
+
+            const tbody = document.getElementById('data-grid-body');
+            tbody.innerHTML = data.rows.map(row => {
+                return '<tr>' + row.map(cell => {
+                    if (typeof cell === 'string' && cell.includes('Critical')) return '<td style="color: #FF3366; font-weight: bold;">' + cell + '</td>';
+                    if (typeof cell === 'string' && cell.includes('Warning')) return '<td style="color: #FFB800; font-weight: bold;">' + cell + '</td>';
+                    if (typeof cell === 'string' && cell.includes('Optimal')) return '<td style="color: #00FF88; font-weight: bold;">' + cell + '</td>';
+                    return '<td>' + cell + '</td>';
+                }).join('') + '</tr>';
+            }).join('');
+        }
+
+        function appendSqlLog(sqlText, status) {
+            status = status || "COMMITTED";
+            const terminal = document.getElementById('sql-log-output');
+            const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log-line';
+            logDiv.innerHTML = '<span class="log-time">[' + timeStr + ']</span> <span class="log-status">' + status + ':</span> <span class="log-sql">' + sqlText + '</span>';
+            terminal.appendChild(logDiv);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function executeSqlSimulation(actionType) {
+            if (actionType === 'load_balance') {
+                appendSqlLog("BEGIN TRANSACTION;", "EXEC");
+                appendSqlLog("SELECT density_pct FROM stadium_gates WHERE gate_id IN ('gate_c', 'gate_d');", "QUERY");
+                
+                setTimeout(() => {
+                    SCHEMA_DATA.stadium_gates.rows[2][5] = "46%";
+                    SCHEMA_DATA.stadium_gates.rows[2][6] = 14.3;
+                    SCHEMA_DATA.stadium_gates.rows[2][8] = "Optimal";
+
+                    SCHEMA_DATA.stadium_gates.rows[3][5] = "68%";
+                    SCHEMA_DATA.stadium_gates.rows[3][6] = 14.8;
+                    SCHEMA_DATA.stadium_gates.rows[3][8] = "Warning";
+
+                    SCHEMA_DATA.operational_incidents_log.rows.unshift([
+                        'inc_' + Date.now().toString().slice(-4),
+                        new Date().toLocaleTimeString('en-US', { hour12: false }) + " EST",
+                        "HIGH",
+                        "Turnstile Load Balancing",
+                        "Gate C -> Gate D Corridor",
+                        "Executed atomic SQL update diverting 45% of incoming traffic to Gate D express turnstiles.",
+                        "RESOLVED",
+                        19
+                    ]);
+
+                    appendSqlLog("UPDATE stadium_gates SET density_pct = 46, wait_time_mins = 14.3, status_flag = 'Optimal' WHERE gate_id = 'gate_c';", "UPDATE");
+                    appendSqlLog("UPDATE stadium_gates SET density_pct = 68, wait_time_mins = 14.8, status_flag = 'Warning' WHERE gate_id = 'gate_d';", "UPDATE");
+                    appendSqlLog("INSERT INTO operational_incidents_log VALUES ('inc_9921', 'match_01', '16:28 EST', 'HIGH', ...);", "INSERT");
+                    appendSqlLog("COMMIT TRANSACTION; Turnstile equilibrium restored.", "SUCCESS");
+
+                    selectTable('stadium_gates', document.querySelectorAll('.table-nav-item')[2]);
+                    showToast('Gate load balance completed successfully');
+                }, 400);
+
+            } else if (actionType === 'ada_booking') {
+                appendSqlLog("BEGIN TRANSACTION;", "EXEC");
+                appendSqlLog("SELECT * FROM stadium_zones WHERE category = 'accessibility' AND status_flag = 'Optimal';", "QUERY");
+                
+                setTimeout(() => {
+                    SCHEMA_DATA.accessibility_accommodations.rows.unshift([
+                        'book_ada_' + (SCHEMA_DATA.accessibility_accommodations.rows.length + 1),
+                        "match_01",
+                        "FAN-ES-9912",
+                        "Sensory Quiet Room Pod",
+                        "North Zone 25 Sensory Hub",
+                        "Pod #4 (Active)",
+                        "Volunteer Escort #18 (Carlos R.)",
+                        "Confirmed"
+                    ]);
+
+                    appendSqlLog("INSERT INTO accessibility_accommodations VALUES ('book_ada_04', 'match_01', 'FAN-ES-9912', 'Sensory Quiet Room Pod', ...);", "INSERT");
+                    appendSqlLog("COMMIT TRANSACTION; Sensory room pod #4 assigned and volunteer dispatched.", "SUCCESS");
+
+                    selectTable('accessibility_accommodations', document.querySelectorAll('.table-nav-item')[7]);
+                    showToast('ADA sensory pod reservation completed');
+                }, 400);
+
+            } else if (actionType === 'sustainability_log') {
+                appendSqlLog("BEGIN TRANSACTION;", "EXEC");
+                
+                setTimeout(() => {
+                    SCHEMA_DATA.sustainability_metrics_log.rows.push([
+                        SCHEMA_DATA.sustainability_metrics_log.rows.length + 1,
+                        "match_01",
+                        new Date().toLocaleTimeString('en-US', { hour12: false }) + " EST",
+                        35400.0,
+                        "19.2%",
+                        "43,000 L",
+                        "95.0%",
+                        "132.0 Tons"
+                    ]);
+
+                    appendSqlLog("INSERT INTO sustainability_metrics_log (match_id, timestamp, solar_kwh, hvac_reduction_pct, ...) VALUES ('match_01', '20:00 EST', 35400.0, 19.2, ...);", "INSERT");
+                    appendSqlLog("COMMIT TRANSACTION; Net-zero sustainability time-series updated.", "SUCCESS");
+
+                    selectTable('sustainability_metrics_log', document.querySelectorAll('.table-nav-item')[6]);
+                    showToast('Sustainability telemetry record inserted');
+                }, 400);
+            }
+        }
+
+        function resetDatabaseSimulation() {
+            location.reload();
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
