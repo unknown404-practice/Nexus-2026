@@ -265,4 +265,13 @@ limitations under the License.
 ```
 
 ---
+
+## 👤 Author & Contact Information
+
+**Ranadeep Saha**  
+*Member of Google Developer Group (GDG)*  
+* **Contact / LinkedIn:** [www.linkedin.com/in/ranadeep-saha-a03296404](https://www.linkedin.com/in/ranadeep-saha-a03296404)  
+* **Email ID:** [ranadeep2021saha@gmail.com](mailto:ranadeep2021saha@gmail.com)  
+
+---
 *Architected and developed with precision for World-Class Tournament Operations and Next-Generation Smart Stadium Management.*
