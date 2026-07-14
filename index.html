@@ -1348,6 +1348,26 @@
         }
     };
 
+    // ── BASE OBJECT DECLARATIONS ──
+    const AI_RESPONSES = {
+        'navigation': 'Fastest route to Sector 112: Enter via West Gate D (current wait: 4 min) and take Express Corridor W-12. Estimated arrival: 6 minutes. The route avoids the congested South Gate C corridor. I have activated illuminated wayfinding beacons along your path.',
+        'accessibility': 'ADA Sensory Quiet Room Pod #3 is available at North Zone 25. Soundproof walls are active. Elevator E2 has zero wait time. I am dispatching Volunteer Escort #42 (Sarah M.) to meet you at Gate A within 2 minutes.',
+        'food': 'Halal & Gluten-Free Hub: Global Gourmet at Sector 108 (2-min queue). You can place an express QR order now for pickup at Locker B4. I have reserved your order slot.',
+        'shuttle': 'Post-match EV shuttle booking confirmed. Autonomous shuttle EV-03 (ADA Priority, 100% battery) will be at Terminal S1 at match end. Estimated capacity: 12 seats. 8 seats remaining. Your boarding pass is in your wallet.',
+        'carbon': 'Today\'s sustainability report: 34,820 kWh solar generation (84% of stadium ops), 18.4% AI HVAC savings, 42,500 L rainwater recycled. Total carbon offset: 128.5 Tons CO2. We are on track for Net-Zero certification.',
+        'default': 'I understand your query. The Nexus GenAI engine is processing real-time data from 2,400+ IoT sensors across the stadium. Let me find the optimal response for you based on current conditions.'
+    };
+
+    const ZONE_DETAILS = {
+        north: { name: 'North Gate A & Concourse', density: '24%', temp: '71°F (21.6°C)', aqi: 'AQI 22 (Optimal)', noise: '78 dB', status: 'Optimal', desc: 'VIP and media express entry. 100% ADA lanes active. Currently operating at 24% capacity with zero wait times.' },
+        east: { name: 'East Gate B & Lower Bowl', density: '72%', temp: '73°F (22.7°C)', aqi: 'AQI 28 (Good)', noise: '104 dB', status: 'Warning', desc: 'General admission. 72% density approaching warning threshold. AI monitoring for potential crowd diversion.' },
+        south: { name: 'South Gate C Transit Hub', density: '91%', temp: '76°F (24.4°C)', aqi: 'AQI 45 (Moderate)', noise: '92 dB', status: 'Critical', desc: 'Metro transit hub at 91% density. AI has triggered automatic crowd diversion redirecting 45% to West Gate D.' },
+        west: { name: 'West Gate D & Family Hub', density: '31%', temp: '72°F (22.2°C)', aqi: 'AQI 25 (Good)', noise: '102 dB', status: 'Optimal', desc: 'Family and accessibility priority gate. Zero wait priority access. Currently absorbing diverted traffic from Gate C.' },
+        vip: { name: 'Sky Box VIP Lounge', density: '65%', temp: '69°F (20.5°C)', aqi: 'AQI 15 (Pristine)', noise: '64 dB', status: 'Optimal', desc: 'Presidential VIP suite with private concierge. Pristine air quality and acoustic isolation from main bowl.' },
+        access: { name: 'Central Sensory Hub & First Aid', density: '18%', temp: '70°F (21.1°C)', aqi: 'AQI 12 (Pristine)', noise: '42 dB', status: 'Optimal', desc: 'Sensory quiet rooms and first aid station. 4 acoustic pods active. Pristine conditions for neurodivergent guests.' },
+        shuttle: { name: 'EV Autonomous Shuttle Terminal', density: '38%', temp: '73°F (22.7°C)', aqi: 'AQI 20 (Optimal)', noise: '68 dB', status: 'Optimal', desc: '4 autonomous EV shuttles docked. Fleet battery avg: 94%. Next departures in 2-15 minutes.' }
+    };
+
     const ZONE_DETAILS_BY_LANG = {
         en: ZONE_DETAILS,
         ja: {
