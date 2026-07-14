@@ -448,6 +448,11 @@
             </div>
         </div>
         <div class="header-actions">
+            <div class="audio-control" style="display: flex; align-items: center; gap: 0.4rem; background: rgba(16, 22, 38, 0.85); border: 1px solid var(--border-glass); padding: 0.35rem 0.6rem; border-radius: 8px;">
+                <span id="audio-icon" onclick="toggleMuteHaptics()" style="font-size: 0.95rem; cursor: pointer;" title="Toggle Mute / Unmute">🔊</span>
+                <input type="range" id="haptics-volume" min="0" max="100" value="80" style="width: 65px; cursor: pointer; accent-color: var(--color-primary);" title="Haptics Volume">
+                <span id="volume-label" style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--color-primary); min-width: 28px;">80%</span>
+            </div>
             <a href="index.html" class="btn-secondary" style="text-decoration: none;">&#11013;&#65039; Return to Main Portal</a>
             <button class="btn-primary" onclick="resetDatabaseSimulation()">&#128260; Reset Database State</button>
         </div>
@@ -692,6 +697,93 @@
     <div class="toast-container" id="toast-container"></div>
 
     <script>
+        // ── WEB AUDIO API + HAPTICS SOUND SYNTHESIZER ──
+        let audioCtx = null;
+        let hapticsMuted = false;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) audioCtx = new AudioContextClass();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function toggleMuteHaptics() {
+            hapticsMuted = !hapticsMuted;
+            const icon = document.getElementById('audio-icon');
+            if (icon) icon.textContent = hapticsMuted ? '🔇' : '🔊';
+            showToast(hapticsMuted ? 'Haptics & Audio Synthesizer Muted' : 'Haptics & Audio Synthesizer Active');
+            if (!hapticsMuted) playHapticSound('success');
+        }
+
+        function playHapticSound(type = 'click') {
+            if (hapticsMuted) return;
+            const volSlider = document.getElementById('haptics-volume');
+            const volPct = volSlider ? parseInt(volSlider.value, 10) : 80;
+            if (volPct <= 0) return;
+            const gainLevel = (volPct / 100) * 0.22;
+
+            if (navigator.vibrate) {
+                try {
+                    if (type === 'alert' || type === 'command') navigator.vibrate([40, 30, 40]);
+                    else if (type === 'success') navigator.vibrate(30);
+                    else navigator.vibrate(15);
+                } catch (e) {}
+            }
+
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            const now = ctx.currentTime;
+
+            if (type === 'click' || type === 'tab') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.exponentialRampToValueAtTime(1050, now + 0.04);
+                gain.gain.setValueAtTime(gainLevel, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            } else if (type === 'command' || type === 'alert') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.setValueAtTime(680, now + 0.08);
+                gain.gain.setValueAtTime(gainLevel * 1.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.07);
+                osc.frequency.setValueAtTime(783.99, now + 0.14);
+                gain.gain.setValueAtTime(gainLevel, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const volSlider = document.getElementById('haptics-volume');
+            const volLabel = document.getElementById('volume-label');
+            if (volSlider && volLabel) {
+                volSlider.addEventListener('input', (e) => {
+                    volLabel.textContent = e.target.value + '%';
+                    if (!hapticsMuted) playHapticSound('click');
+                });
+            }
+        });
+
         const SCHEMA_DATA = {
             stadium_system_metadata: {
                 desc: "Formal system attribution, author verification (Ranadeep Saha, Member of GDG), and architectural version control.",
@@ -845,11 +937,13 @@
         }
 
         function executeSqlSimulation(actionType) {
+            playHapticSound('command');
             if (actionType === 'load_balance') {
                 appendSqlLog("BEGIN TRANSACTION;", "EXEC");
                 appendSqlLog("SELECT density_pct FROM stadium_gates WHERE gate_id IN ('gate_c', 'gate_d');", "QUERY");
                 
                 setTimeout(() => {
+                    playHapticSound('success');
                     SCHEMA_DATA.stadium_gates.rows[2][5] = "46%";
                     SCHEMA_DATA.stadium_gates.rows[2][6] = 14.3;
                     SCHEMA_DATA.stadium_gates.rows[2][8] = "Optimal";
@@ -883,6 +977,7 @@
                 appendSqlLog("SELECT * FROM stadium_zones WHERE category = 'accessibility' AND status_flag = 'Optimal';", "QUERY");
                 
                 setTimeout(() => {
+                    playHapticSound('success');
                     SCHEMA_DATA.accessibility_accommodations.rows.unshift([
                         'book_ada_' + (SCHEMA_DATA.accessibility_accommodations.rows.length + 1),
                         "match_01",
@@ -905,6 +1000,7 @@
                 appendSqlLog("BEGIN TRANSACTION;", "EXEC");
                 
                 setTimeout(() => {
+                    playHapticSound('success');
                     SCHEMA_DATA.sustainability_metrics_log.rows.push([
                         SCHEMA_DATA.sustainability_metrics_log.rows.length + 1,
                         "match_01",

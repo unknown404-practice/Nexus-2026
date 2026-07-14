@@ -731,6 +731,11 @@
                 <option value="ja">&#127760; Japanese</option>
                 <option value="ko">&#127760; Korean</option>
             </select>
+            <div class="audio-control" style="display: flex; align-items: center; gap: 0.4rem; background: rgba(16, 22, 38, 0.85); border: 1px solid var(--border-glass); padding: 0.35rem 0.6rem; border-radius: 8px;">
+                <span id="audio-icon" onclick="toggleMuteHaptics()" style="font-size: 0.95rem; cursor: pointer;" title="Toggle Mute / Unmute">🔊</span>
+                <input type="range" id="haptics-volume" min="0" max="100" value="80" style="width: 65px; cursor: pointer; accent-color: var(--color-primary);" title="Haptics Volume">
+                <span id="volume-label" style="font-size: 0.72rem; font-family: var(--font-mono); color: var(--color-primary); min-width: 28px;">80%</span>
+            </div>
             <button id="voice-toggle" class="voice-toggle" title="Toggle AI Voice Assistant">&#128266;</button>
         </div>
     </header>
@@ -1117,27 +1122,326 @@
         { id: 'inc_104', time: '19:10:05 EST', severity: 'HIGH', category: 'Medical Dispatch', location: 'West Stand Sector 128, Row 14', desc: 'Dispatched nearest paramedic team equipped with cooling kit within 2 mins.', status: 'RESOLVED', saved: 3 }
     ];
 
-    const AI_RESPONSES = {
-        'navigation': 'Fastest route to Sector 112: Enter via West Gate D (current wait: 4 min) and take Express Corridor W-12. Estimated arrival: 6 minutes. The route avoids the congested South Gate C corridor. I have activated illuminated wayfinding beacons along your path.',
-        'accessibility': 'ADA Sensory Quiet Room Pod #3 is available at North Zone 25. Soundproof walls are active. Elevator E2 has zero wait time. I am dispatching Volunteer Escort #42 (Sarah M.) to meet you at Gate A within 2 minutes.',
-        'food': 'Halal & Gluten-Free Hub: Global Gourmet at Sector 108 (2-min queue). You can place an express QR order now for pickup at Locker B4. I have reserved your order slot.',
-        'shuttle': 'Post-match EV shuttle booking confirmed. Autonomous shuttle EV-03 (ADA Priority, 100% battery) will be at Terminal S1 at match end. Estimated capacity: 12 seats. 8 seats remaining. Your boarding pass is in your wallet.',
-        'carbon': 'Today\'s sustainability report: 34,820 kWh solar generation (84% of stadium ops), 18.4% AI HVAC savings, 42,500 L rainwater recycled. Total carbon offset: 128.5 Tons CO2. We are on track for Net-Zero certification.',
-        'default': 'I understand your query. The Nexus GenAI engine is processing real-time data from 2,400+ IoT sensors across the stadium. Let me find the optimal response for you based on current conditions.'
+    // ── WEB AUDIO API + HAPTICS SOUND SYNTHESIZER ──
+    let audioCtx = null;
+    let hapticsMuted = false;
+    let currentLanguage = 'en';
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
+    function toggleMuteHaptics() {
+        hapticsMuted = !hapticsMuted;
+        const icon = document.getElementById('audio-icon');
+        if (icon) icon.textContent = hapticsMuted ? '🔇' : '🔊';
+        showToast(hapticsMuted ? 'Haptics & Audio Synthesizer Muted' : 'Haptics & Audio Synthesizer Active');
+        if (!hapticsMuted) playHapticSound('success');
+    }
+
+    function playHapticSound(type = 'click') {
+        if (hapticsMuted) return;
+        const volSlider = document.getElementById('haptics-volume');
+        const volPct = volSlider ? parseInt(volSlider.value, 10) : 80;
+        if (volPct <= 0) return;
+        const gainLevel = (volPct / 100) * 0.22; // Safe comfortable gain level
+
+        // Trigger physical haptic vibration on mobile / supported browsers
+        if (navigator.vibrate) {
+            try {
+                if (type === 'alert' || type === 'command') navigator.vibrate([40, 30, 40]);
+                else if (type === 'success' || type === 'route') navigator.vibrate(30);
+                else navigator.vibrate(15);
+            } catch (e) {}
+        }
+
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+
+        if (type === 'click' || type === 'tab') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(650, now);
+            osc.frequency.exponentialRampToValueAtTime(1050, now + 0.04);
+            gain.gain.setValueAtTime(gainLevel, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            osc.start(now);
+            osc.stop(now + 0.04);
+        } else if (type === 'command' || type === 'alert') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.setValueAtTime(680, now + 0.08);
+            gain.gain.setValueAtTime(gainLevel * 1.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+            osc.start(now);
+            osc.stop(now + 0.16);
+        } else if (type === 'success' || type === 'route') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.07); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.14); // G5
+            gain.gain.setValueAtTime(gainLevel, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc.start(now);
+            osc.stop(now + 0.22);
+        } else if (type === 'lang') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+            gain.gain.setValueAtTime(gainLevel, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+    }
+
+    // ── MULTILINGUAL TRANSLATIONS DICTIONARY (8 LANGUAGES) ──
+    const MULTILINGUAL_DB = {
+        en: {
+            title: 'Nexus 2026', sub: 'FIFA World Cup Smart Stadium AI Hub',
+            modeFan: '👋 Fan & VIP Experience', modeCommand: '⚡ Operations Command',
+            aiHeader: 'Nexus GenAI Concierge', aiSub: 'Multilingual • Pathfinding • Operations',
+            qLabel: '💡 Quick AI Prompts:',
+            p1: '🧭 Fastest route to Sector 112', p2: '🍔 Halal & Gluten-Free near me', p3: '♿ ADA Sensory Room & Elevators', p4: '🚌 Post-match EV shuttle booking',
+            tabMap: '🗺️ Interactive 3D/SVG Map', tabGates: '⛩️ Pedestrian Gates & Concourse Flow', tabIncidents: '⚡ Real-Time Operational Triage Log', tabSchema: '📊 Relational Schema Directory',
+            toastLang: '🌐 Language switched to English. Audio & Haptics active.',
+            responses: {
+                'navigation': 'Fastest route to Sector 112: Enter via West Gate D (current wait: 4 min) and take Express Corridor W-12. Estimated arrival: 6 minutes. The route avoids the congested South Gate C corridor. I have activated illuminated wayfinding beacons along your path.',
+                'accessibility': 'ADA Sensory Quiet Room Pod #3 is available at North Zone 25. Soundproof walls are active. Elevator E2 has zero wait time. I am dispatching Volunteer Escort #42 (Sarah M.) to meet you at Gate A within 2 minutes.',
+                'food': 'Halal & Gluten-Free Hub: Global Gourmet at Sector 108 (2-min queue). You can place an express QR order now for pickup at Locker B4. I have reserved your order slot.',
+                'shuttle': 'Post-match EV shuttle booking confirmed. Autonomous shuttle EV-03 (ADA Priority, 100% battery) will be at Terminal S1 at match end. Estimated capacity: 12 seats. 8 seats remaining. Your boarding pass is in your wallet.',
+                'carbon': 'Today\'s sustainability report: 34,820 kWh solar generation (84% of stadium ops), 18.4% AI HVAC savings, 42,500 L rainwater recycled. Total carbon offset: 128.5 Tons CO2. We are on track for Net-Zero certification.',
+                'default': 'I understand your query. The Nexus GenAI engine is processing real-time data from 2,400+ IoT sensors across the stadium. Let me find the optimal response for you based on current conditions.'
+            }
+        },
+        es: {
+            title: 'Nexus 2026', sub: 'Hub AI de Estadio Inteligente - Copa Mundial FIFA',
+            modeFan: '👋 Experiencia VIP y Aficionados', modeCommand: '⚡ Comando de Operaciones',
+            aiHeader: 'Conserje GenAI Nexus', aiSub: 'Multilingüe • Rutas en Vivo • Operaciones',
+            qLabel: '💡 Preguntas AI Rápidas:',
+            p1: '🧭 Ruta más rápida al Sector 112', p2: '🍔 Comida Halal y Sin Gluten cerca', p3: '♿ Sala Sensorial ADA y Ascensores', p4: '🚌 Reserva de lanzadera EV pospartido',
+            tabMap: '🗺️ Mapa Interactivo 3D/SVG', tabGates: '⛩️ Flujo de Puertas y Pasillos', tabIncidents: '⚡ Registro Operacional de Emergencias', tabSchema: '📊 Directorio Relacional SQL',
+            toastLang: '🌐 Idioma cambiado a Español. Hápticos activos.',
+            responses: {
+                'navigation': 'Ruta más rápida al Sector 112: Ingrese por la Puerta Oeste D (espera actual: 4 min) y tome el Pasillo Expreso W-12. Llegada estimada: 6 minutos. Evita el cuello de botella de la Puerta Sur C. Balizas LED activadas.',
+                'accessibility': 'La Sala de Calma Sensorial ADA #3 está disponible en la Zona Norte 25. Muros insonorizados activos. Ascensor E2 sin espera. Enviando al Escolta Voluntario #42 (Sarah M.) para encontrarle en Puerta A en 2 mins.',
+                'food': 'Centro Halal y Sin Gluten: Global Gourmet en Sector 108 (cola de 2 min). Puede hacer un pedido exprés con código QR ahora para recoger en el Casillero B4.',
+                'shuttle': 'Reserva de lanzadera autónoma EV confirmada. Vehículo EV-03 (Prioridad ADA, 100% batería) estará en Terminal S1 al terminar el partido. Quedan 8 asientos.',
+                'carbon': 'Informe de sostenibilidad de hoy: 34,820 kWh generados por energía solar (84% del estadio), 18.4% ahorro en aire acondicionado por AI. Total compensado: 128.5 Toneladas CO2.',
+                'default': 'Comprendo su consulta. El motor GenAI procesa telemetría en vivo de más de 2,400 sensores IoT del estadio. Calculando la respuesta óptima.'
+            }
+        },
+        fr: {
+            title: 'Nexus 2026', sub: 'Hub IA du Stade Intelligent - Coupe du Monde FIFA',
+            modeFan: '👋 Expérience VIP et Supporters', modeCommand: '⚡ Commande des Opérations',
+            aiHeader: 'Concierge GenAI Nexus', aiSub: 'Multilingue • Orientation • Opérations',
+            qLabel: '💡 Prompts IA Rapides :',
+            p1: '🧭 Route la plus rapide vers le Secteur 112', p2: '🍔 Options Halal & Sans Gluten', p3: '♿ Espace Calme ADA & Ascenseurs', p4: '🚌 Réservation navette électrique EV',
+            tabMap: '🗺️ Carte Interactive 3D/SVG', tabGates: '⛩️ Flux des Portes et Hall', tabIncidents: '⚡ Journal de Triage en Temps Réel', tabSchema: '📊 Schéma Relationnel SQL',
+            toastLang: '🌐 Langue changée en Français. Audio et vibrations activés.',
+            responses: {
+                'navigation': 'Route la plus rapide vers le Secteur 112 : Entrez par la Porte Ouest D (attente : 4 min) et empruntez le Couloir Express W-12. Arrivée estimée : 6 minutes. Vous évitez la congestion de la Porte C.',
+                'accessibility': 'La Capsule Calme Sensorielle ADA #3 est disponible en Zone Nord 25. Ascenseur E2 disponible immédiatement. L\'escouade bénévole #42 (Sarah M.) est en route vers la Porte A.',
+                'food': 'Espace Halal & Sans Gluten : Global Gourmet au Secteur 108 (attente : 2 min). Commande express QR disponible pour un retrait immédiat au Casier B4.',
+                'shuttle': 'Navette autonome EV confirmée. La navette EV-03 (Priorité ADA, batterie 100%) vous attendra au Terminal S1 après le match. 8 places restantes.',
+                'carbon': 'Rapport écologique : 34 820 kWh de production solaire (84% du stade), réduction CVC de 18,4% par IA, 42 500 L d\'eau recyclée. Compensation carbone totale : 128,5 Tonnes de CO2.',
+                'default': 'Je comprends votre demande. L\'IA Nexus analyse actuellement les flux de 2 400+ capteurs IoT en temps réel pour vous fournir la meilleure recommandation.'
+            }
+        },
+        pt: {
+            title: 'Nexus 2026', sub: 'Centro IA de Estádio Inteligente - Copa do Mundo FIFA',
+            modeFan: '👋 Experiência VIP e Torcedores', modeCommand: '⚡ Comando de Operações',
+            aiHeader: 'Concierge GenAI Nexus', aiSub: 'Multilingue • Roteamento • Operações',
+            qLabel: '💡 Sugestões Rápidas de IA:',
+            p1: '🧭 Rota mais rápida ao Setor 112', p2: '🍔 Comida Halal e Sem Glúten perto', p3: '♿ Sala Sensorial ADA e Elevadores', p4: '🚌 Reserva de ônibus EV pós-jogo',
+            tabMap: '🗺️ Mapa Interativo 3D/SVG', tabGates: '⛩️ Fluxo de Portões e Saguão', tabIncidents: '⚡ Log Operacional em Tempo Real', tabSchema: '📊 Diretório Relacional SQL',
+            toastLang: '🌐 Idioma alterado para Português. Áudio háptico ativo.',
+            responses: {
+                'navigation': 'Rota mais rápida para o Setor 112: Entre pelo Portão Oeste D (espera atual: 4 min) e pegue o Corredor Expresso W-12. Chegada em 6 minutos, evitando o congestionamento do Portão Sul C.',
+                'accessibility': 'A Sala Sensorial ADA #3 está livre na Zona Norte 25. Elevador E2 sem fila. Estamos enviando a Voluntária #42 (Sarah M.) para encontrá-lo no Portão A em 2 minutos.',
+                'food': 'Centro Halal e Sem Glúten: Global Gourmet no Setor 108 (fila de 2 min). Faça seu pedido QR agora e retire direto no Armário B4.',
+                'shuttle': 'Reserva do ônibus autônomo EV confirmada. Veículo EV-03 (Prioridade ADA, 100% bateria) estará no Terminal S1 ao fim da partida. 8 assentos restantes.',
+                'carbon': 'Relatório de sustentabilidade: 34.820 kWh de energia solar gerada, economia de ar condicionado de 18,4% via IA, e 42.500 L de água reciclada. Total compensado: 128,5 Toneladas CO2.',
+                'default': 'Entendo sua solicitação. O motor Nexus GenAI está processando dados ao vivo de mais de 2.400 sensores IoT do estádio para calcular a melhor resposta.'
+            }
+        },
+        de: {
+            title: 'Nexus 2026', sub: 'KI-Zentrale für das FIFA WM Smart Stadium',
+            modeFan: '👋 Fan- & VIP-Erlebnis', modeCommand: '⚡ Einsatzzentrale',
+            aiHeader: 'Nexus GenAI Concierge', aiSub: 'Mehrsprachig • Wegfindung • Betrieb',
+            qLabel: '💡 Schnelle KI-Befehle:',
+            p1: '🧭 Schnellster Weg zu Sektor 112', p2: '🍔 Halal & Glutenfrei in der Nähe', p3: '♿ ADA Sensorikraum & Aufzüge', p4: '🚌 EV-Shuttle nach dem Spiel buchen',
+            tabMap: '🗺️ Interaktive 3D/SVG-Karte', tabGates: '⛩️ Einlass- & Durchflusskontrolle', tabIncidents: '⚡ Echtzeit-Ereignisprotokoll', tabSchema: '📊 Relationales SQL-Schema',
+            toastLang: '🌐 Sprache auf Deutsch geändert. Haptischer Ton aktiv.',
+            responses: {
+                'navigation': 'Schnellster Weg zu Sektor 112: Betreten Sie das Stadion über Tor West D (Wartezeit: 4 Min) und nutzen Sie den Expresskorridor W-12. Ankunft in ca. 6 Minuten. Umgeht den Stau an Tor Süd C.',
+                'accessibility': 'ADA Sensorik-Ruheraum #3 in Zone Nord 25 ist verfügbar. Aufzug E2 ohne Wartezeit bereit. Begleitperson #42 (Sarah M.) empfängt Sie in 2 Minuten an Tor A.',
+                'food': 'Halal- & Glutenfrei-Zentrum: Global Gourmet bei Sektor 108 (2 Min Wartezeit). QR-Sofortbestellung zur Abholung an Schließfach B4 aktiv.',
+                'shuttle': 'Autonomes EV-Shuttle gebucht. Fahrzeug EV-03 (ADA-Priorität, 100% Batterie) steht nach Schlusspfiff an Terminal S1 bereit. Noch 8 Plätze verfügbar.',
+                'carbon': 'Heutiger Nachhaltigkeitsbericht: 34.820 kWh Solarenergie (84% des Bedarfs), 18,4% Klimaanlagen-Ersparnis durch KI, 128,5 Tonnen CO2 eingespart.',
+                'default': 'Ich verarbeite Ihre Anfrage. Die Nexus KI analysiert Echtzeitdaten von 2.400+ IoT-Sensoren im Stadion für das optimale Ergebnis.'
+            }
+        },
+        ar: {
+            title: 'نكسس 2026', sub: 'مركبة الذكاء الاصطناعي لإدارة الملاعب الذكية لكأس العالم',
+            modeFan: '👋 تجربة المشجعين وكبار الشخصيات', modeCommand: '⚡ قيادة العمليات الطارئة',
+            aiHeader: 'مساعد نكسس الذكي', aiSub: 'متعدد اللغات • توجيه الحشود • إدارة الوقت الفعلي',
+            qLabel: '💡 استفسارات سريعة عبر الذكاء الاصطناعي:',
+            p1: '🧭 أسرع مسار إلى القطاع 112', p2: '🍔 طعام حلال وخالٍ من الغلوتين', p3: '♿ الغرفة الحسية الهادئة والمصاعد', p4: '🚌 حجز حافلة كهربائية بعد المباراة',
+            tabMap: '🗺️ الخريطة التفاعلية 3D/SVG', tabGates: '⛩️ بوابات الدخول والتدفق', tabIncidents: '⚡ سجل الطوارئ والتدخل السريع', tabSchema: '📊 مخطط قاعدة البيانات SQL',
+            toastLang: '🌐 تم تغيير اللغة إلى العربية. التنبيهات الصوتية والاهتزاز مفعلة.',
+            responses: {
+                'navigation': 'أسرع مسار إلى القطاع 112: ادخل عبر البوابة الغربية D (وقت الانتظار: 4 دقائق) واتبع الممر السريع W-12. الوصول المقدر: 6 دقائق. هذا المسار يتجنب الازدحام عند البوابة الجنوبية C.',
+                'accessibility': 'غرفة الهدوء الحسي رقم 3 متاحة في المنطقة الشمالية 25. الجدران العازلة للصوت نشطة. المصعد E2 جاهز بدون انتظار. تم إرسال المتطوعة سارة (رقم 42) لاستقبالك عند البوابة A.',
+                'food': 'مركز الطعام الحلال والخالي من الغلوتين: مطعم جلوبال جورميه في القطاع 108 (انتظار دقيقتين). يمكنك الطلب عبر رمز QR الآن والاستلام من الخزانة B4.',
+                'shuttle': 'تم تأكيد حجز الحافلة الكهربائية المستقلة. ستكون الحافلة EV-03 (بطارية 100%) جاهزة في المحطة S1 فور انتهاء المباراة. متبقي 8 مقاعد فقط.',
+                'carbon': 'تقرير الاستدامة اليوم: توليد 34,820 كيلوواط/ساعة من الطاقة الشمسية، وتوفير 18.4% من طاقة التكييف عبر الذكاء الاصطناعي. إجمالي خفض الكربون: 128.5 طن.',
+                'default': 'أنا أفهم استفسارك. يقوم محرك نكسس بمعالجة البيانات الفورية من أكثر من 2400 مستشعر في الملعب لتقديم الإجابة الأمثل لك الآن.'
+            }
+        },
+        ja: {
+            title: 'Nexus 2026', sub: 'FIFAワールドカップ スマートスタジアムAI統合ハブ',
+            modeFan: '👋 ファン＆VIPエクスペリエンス', modeCommand: '⚡ 統合運用コマンドセンター',
+            aiHeader: 'Nexus GenAI コンシェルジュ', aiSub: '8ヶ国語対応 • ナビゲーション • スタジアム管理',
+            qLabel: '💡 AIクイックプロンプト:',
+            p1: '🧭 セクター112への最速ルート', p2: '🍔 近くのハラール＆グルテンフリー食', p3: '♿ ADAセンサリールーム＆エレベーター', p4: '🚌 試合後の自動運転EVシャトル予約',
+            tabMap: '🗺️ インタラクティブ3D/SVGマップ', tabGates: '⛩️ ゲート入場管理＆人流モニター', tabIncidents: '⚡ リアルタイム運用トリアージログ', tabSchema: '📊 リレーショナルSQLデータベーススキーマ',
+            toastLang: '🌐 日本語に切り替えました。触覚サウンドエフェクトを有効化しました。',
+            responses: {
+                'navigation': 'セクター112への最速ルート：西ゲートD（現在の待ち時間：4分）から入場し、エクスプレス回廊W-12を進んでください。所要時間は約6分です。混雑中の南ゲートCを完全に回避できます。通路のLEDビーコンを点灯させました。',
+                'accessibility': 'ADAセンサリールーム（静音個室 #3）が北ゾーン25で利用可能です。防音設備および空調が最適化されています。エレベーターE2の待ち時間は0分です。サポートボランティア #42（サラ・M）が2分以内にゲートAへお迎えに上がります。',
+                'food': 'ハラール＆グルテンフリー専門ブース：セクター108の「グローバル・グルメ」（待ち時間：約2分）が最寄りです。現在QRコードでモバイルオーダーを発注いただければ、ロッカーB4で即時受け取り可能です。',
+                'shuttle': '試合後の自動運転EVシャトル予約を完了しました。車両 EV-03（バリアフリー優先・バッテリー充電率100%）が試合終了直後にターミナルS1で待機します。定員12名中、残り座席は8席です。搭乗パスをモバイルウォレットに送信しました。',
+                'carbon': '本日の環境サステナビリティ・テレメトリー報告：34,820 kWhの太陽光発電（スタジアム総電力の84%を供給中）、AI空調制御による18.4%の電力削減、および42,500 Lの雨水リサイクルを達成しました。CO2削減合計：128.5トン。',
+                'default': 'お問い合わせを承りました。Nexus GenAIエンジンがスタジアム内に設置された2,400以上のリアルタイムIoTセンサーからのテレメトリーを分析し、最適な回答を計算しています。'
+            }
+        },
+        ko: {
+            title: 'Nexus 2026', sub: 'FIFA 월드컵 스마트 스타디움 AI 통제 센터',
+            modeFan: '👋 팬 및 VIP 안락 경험', modeCommand: '⚡ 실시간 통합 운영 통제',
+            aiHeader: 'Nexus GenAI 컨시어지', aiSub: '8개국어 지원 • 실시간 길안내 • 현장 통제',
+            qLabel: '💡 AI 빠른 질의:',
+            p1: '🧭 112 구역까지 가장 빠른 경로', p2: '🍔 주변 할랄 및 글루텐프리 매장', p3: '♿ ADA 감각 안정실 및 엘리베이터', p4: '🚌 경기 후 자율주행 EV 셔틀 예약',
+            tabMap: '🗺️ 인터랙티브 3D/SVG 관중석 맵', tabGates: '⛩️ 출입 게이트 및 인파 유량 모니터링', tabIncidents: '⚡ 실시간 현장 긴급 대처 로그', tabSchema: '📊 SQL 관계형 데이터베이스 구조',
+            toastLang: '🌐 한국어로 변경되었습니다. 햅틱 및 사운드 피드백이 활성화되었습니다.',
+            responses: {
+                'navigation': '112 구역까지의 가장 빠른 경로: 서문 게이트 D(현재 대기 4분)로 입장하여 고속 통로 W-12를 이용하십시오. 예상 소요 시간은 6분이며, 현재 혼잡한 남문 게이트 C를 피하는 최적 경로입니다. 통로 바닥 LED 유도등이 켜졌습니다.',
+                'accessibility': 'ADA 감각 안심 객실 3번이 북쪽 25 구역에서 즉시 이용 가능합니다. 완벽한 방음 및 공기 청정 시스템이 가동 중입니다. E2 엘리베이터 대기 없이 이용 가능하며, 안내 자원봉사자 #42(사라 M.)가 2분 내 A 게이트로 마중 나갑니다.',
+                'food': '할랄 & 글루텐프리 전문점: 108 구역 글로벌 고메 매장(대기 2분). 현재 QR 모바일 주문 후 B4 보관함에서 대기 없이 바로 수령 가능합니다. 주문 슬롯을 확보했습니다.',
+                'shuttle': '경기 후 자율주행 EV 셔틀 예약이 완료되었습니다. 차량 EV-03(장애인 우선, 배터리 100%)이 경기 종료 즉시 S1 터미널에서 대기합니다. 잔여 좌석: 8석. 탑승권이 지갑에 발급되었습니다.',
+                'carbon': '오늘의 친환경 지속가능성 보고서: 34,820 kWh 태양광 발전(스타디움 전체 84% 공급), AI 공조 최적화를 통한 18.4% 전력 절감, 42,500 L 우수 재활용 달성. 총 탄소 저감량: 128.5톤 CO2.',
+                'default': '질문을 확인했습니다. Nexus GenAI 엔진이 스타디움 전역의 2,400개 이상 IoT 센서 데이터를 분석하여 가장 정확하고 안전한 안내를 제공합니다.'
+            }
+        }
     };
 
-    const ZONE_DETAILS = {
-        north: { name: 'North Gate A & Concourse', density: '24%', temp: '71\u00B0F', aqi: 'AQI 22 (Optimal)', noise: '78 dB', status: 'Optimal', desc: 'VIP and media express entry. 100% ADA lanes active. Currently operating at 24% capacity with zero wait times.' },
-        east: { name: 'East Gate B & Lower Bowl', density: '72%', temp: '73\u00B0F', aqi: 'AQI 28 (Good)', noise: '104 dB', status: 'Warning', desc: 'General admission. 72% density approaching warning threshold. AI monitoring for potential crowd diversion.' },
-        south: { name: 'South Gate C Transit Hub', density: '91%', temp: '76\u00B0F', aqi: 'AQI 45 (Moderate)', noise: '92 dB', status: 'Critical', desc: 'Metro transit hub at 91% density. AI has triggered automatic crowd diversion redirecting 45% to West Gate D.' },
-        west: { name: 'West Gate D & Family Hub', density: '31%', temp: '72\u00B0F', aqi: 'AQI 25 (Good)', noise: '102 dB', status: 'Optimal', desc: 'Family and accessibility priority gate. Zero wait priority access. Currently absorbing diverted traffic from Gate C.' },
-        vip: { name: 'Sky Box VIP Lounge', density: '65%', temp: '69\u00B0F', aqi: 'AQI 15 (Pristine)', noise: '64 dB', status: 'Optimal', desc: 'Presidential VIP suite with private concierge. Pristine air quality and acoustic isolation from main bowl.' },
-        access: { name: 'Central Sensory Hub & First Aid', density: '18%', temp: '70\u00B0F', aqi: 'AQI 12 (Pristine)', noise: '42 dB', status: 'Optimal', desc: 'Sensory quiet rooms and first aid station. 4 acoustic pods active. Pristine conditions for neurodivergent guests.' },
-        shuttle: { name: 'EV Autonomous Shuttle Terminal', density: '38%', temp: '73\u00B0F', aqi: 'AQI 20 (Optimal)', noise: '68 dB', status: 'Optimal', desc: '4 autonomous EV shuttles docked. Fleet battery avg: 94%. Next departures in 2-15 minutes.' }
+    const ZONE_DETAILS_BY_LANG = {
+        en: ZONE_DETAILS,
+        ja: {
+            north: { name: '北ゲートA & VIPコンコース', density: '24%', temp: '71°F (21.6°C)', aqi: 'AQI 22 (最適)', noise: '78 dB', status: 'Optimal', desc: 'VIPおよびメディア専用エクスプレス入場口。100%バリアフリーADAレーン稼働中。現在稼働率は24%で待ち時間はゼロです。' },
+            east: { name: '東ゲートB & ロアースタンド', density: '72%', temp: '73°F (22.7°C)', aqi: 'AQI 28 (良好)', noise: '104 dB', status: 'Warning', desc: '一般入場ゲート。混雑率72%に達し警告しきい値に接近中。AIが混雑分散アルゴリズムを監視しています。' },
+            south: { name: '南ゲートC 地下鉄乗り換えハブ', density: '91%', temp: '76°F (24.4°C)', aqi: 'AQI 45 (中程度)', noise: '92 dB', status: 'Critical', desc: '地下鉄ハブ接続ゲート。混雑率91%に達したため、AIが自動分散処理をトリガーし、入場者の45%を西ゲートDへ誘導中です。' },
+            west: { name: '西ゲートD & ファミリーハブ', density: '31%', temp: '72°F (22.2°C)', aqi: 'AQI 25 (良好)', noise: '102 dB', status: 'Optimal', desc: 'ファミリーおよびバリアフリー優先入場ゲート。待ち時間ゼロ。現在、南ゲートCからの迂回トラフィックを順調に吸収しています。' },
+            vip: { name: 'スカイボックス VIPラウンジ', density: '65%', temp: '69°F (20.5°C)', aqi: 'AQI 15 (極めて清浄)', noise: '64 dB', status: 'Optimal', desc: '大統領レベルのプライベートコンシェルジュ付きVIPスイート。メインスタンドからの音響遮断および最高水準の空気清浄度。' },
+            access: { name: '中央センサリールーム & 応急救護センター', density: '18%', temp: '70°F (21.1°C)', aqi: 'AQI 12 (極めて清浄)', noise: '42 dB', status: 'Optimal', desc: '感覚過敏（ニューロダイバーシティー）の方向け静音ルームおよび救護所。4つの個室ポッド稼働中。極めて静かで安全な環境です。' },
+            shuttle: { name: '自動運転EVシャトル・ターミナル', density: '38%', temp: '73°F (22.7°C)', aqi: 'AQI 20 (最適)', noise: '68 dB', status: 'Optimal', desc: '自動運転EVシャトル4台が充電スタンバイ中。フリート平均残量94%。次の発車まで約2〜15分です。' }
+        },
+        es: {
+            north: { name: 'Puerta Norte A y Vestíbulo VIP', density: '24%', temp: '71°F (21°C)', aqi: 'AQI 22 (Óptimo)', noise: '78 dB', status: 'Optimal', desc: 'Acceso exprés para VIP y prensa. Carriles ADA activos al 100%. Operando al 24% de capacidad sin esperas.' },
+            east: { name: 'Puerta Este B y Grada Baja', density: '72%', temp: '73°F (23°C)', aqi: 'AQI 28 (Bueno)', noise: '104 dB', status: 'Warning', desc: 'Acceso general. Densidad del 72% aproximándose a umbral de alerta. IA monitoreando posible desvío de tráfico.' },
+            south: { name: 'Puerta Sur C - Intercambiador Metro', density: '91%', temp: '76°F (24°C)', aqi: 'AQI 45 (Moderado)', noise: '92 dB', status: 'Critical', desc: 'Hub de metro al 91% de densidad. La IA ha activado la redirección automática de multitudes derivando un 45% a la Puerta Oeste D.' },
+            west: { name: 'Puerta Oeste D y Centro Familiar', density: '31%', temp: '72°F (22°C)', aqi: 'AQI 25 (Bueno)', noise: '102 dB', status: 'Optimal', desc: 'Acceso prioritario familiar y ADA. Sin esperas. Absorbiendo eficientemente el flujo desviado desde la Puerta Sur.' },
+            vip: { name: 'Salón VIP Sky Box', density: '65%', temp: '69°F (20°C)', aqi: 'AQI 15 (Pristino)', noise: '64 dB', status: 'Optimal', desc: 'Suite presidencial con conserjería privada. Calidad de aire prístina y aislamiento acústico de la grada principal.' },
+            access: { name: 'Centro Sensorial y Primeros Auxilios', density: '18%', temp: '70°F (21°C)', aqi: 'AQI 12 (Pristino)', noise: '42 dB', status: 'Optimal', desc: 'Salas de calma sensorial y enfermería. 4 cápsulas acústicas activas. Condiciones óptimas para huéspedes neurodivergentes.' },
+            shuttle: { name: 'Terminal de Lanzaderas Autónomas EV', density: '38%', temp: '73°F (23°C)', aqi: 'AQI 20 (Óptimo)', noise: '68 dB', status: 'Optimal', desc: '4 lanzaderas eléctricas conectadas. Batería promedio de flota: 94%. Próximas salidas en 2 a 15 minutos.' }
+        }
     };
+
+    function initHapticsAndLanguage() {
+        // Volume Slider listener
+        const volSlider = document.getElementById('haptics-volume');
+        const volLabel = document.getElementById('volume-label');
+        if (volSlider && volLabel) {
+            volSlider.addEventListener('input', (e) => {
+                volLabel.textContent = e.target.value + '%';
+                if (!hapticsMuted) playHapticSound('click');
+            });
+        }
+
+        // Language Selector listener
+        const langSel = document.getElementById('lang-selector');
+        if (langSel) {
+            langSel.addEventListener('change', (e) => {
+                currentLanguage = e.target.value;
+                playHapticSound('lang');
+                applyTranslations(currentLanguage);
+            });
+        }
+    }
+
+    function applyTranslations(lang) {
+        const t = MULTILINGUAL_DB[lang] || MULTILINGUAL_DB.en;
+        
+        // Header strings
+        const hTitle = document.querySelector('.header-title p');
+        if (hTitle) hTitle.textContent = t.sub;
+        const btnFan = document.querySelector('.mode-btn[data-mode="fan"]');
+        if (btnFan) btnFan.innerHTML = t.modeFan;
+        const btnCmd = document.querySelector('.mode-btn[data-mode="command"]');
+        if (btnCmd) btnCmd.innerHTML = t.modeCommand;
+
+        // AI Concierge box strings
+        const aiHead = document.querySelector('.ai-title h2');
+        if (aiHead) aiHead.textContent = t.aiHeader;
+        const aiSub = document.querySelector('.ai-title span');
+        if (aiSub) aiSub.textContent = t.aiSub;
+        const qLabel = document.querySelector('.quick-prompts .qlabel');
+        if (qLabel) qLabel.textContent = t.qLabel;
+
+        // Quick prompt chips
+        const chips = document.querySelectorAll('.prompt-chip');
+        if (chips.length >= 4) {
+            chips[0].innerHTML = t.p1;
+            chips[0].dataset.prompt = t.p1.replace(/^[^a-zA-Z0-9¿🧭]+/g, '');
+            chips[1].innerHTML = t.p2;
+            chips[1].dataset.prompt = t.p2.replace(/^[^a-zA-Z0-9¿🍔]+/g, '');
+            chips[2].innerHTML = t.p3;
+            chips[2].dataset.prompt = t.p3.replace(/^[^a-zA-Z0-9¿♿]+/g, '');
+            chips[3].innerHTML = t.p4;
+            chips[3].dataset.prompt = t.p4.replace(/^[^a-zA-Z0-9¿🚌]+/g, '');
+        }
+
+        // Tab buttons
+        const tabs = document.querySelectorAll('.tab-btn');
+        if (tabs.length >= 4) {
+            tabs[0].innerHTML = t.tabMap;
+            tabs[1].innerHTML = t.tabGates;
+            tabs[2].innerHTML = t.tabIncidents;
+            tabs[3].innerHTML = t.tabSchema;
+        }
+
+        // Update AI responses dictionary
+        Object.assign(AI_RESPONSES, t.responses);
+
+        showToast(t.toastLang);
+    }
 
     // ── INITIALIZATION ──
     document.addEventListener('DOMContentLoaded', () => {
+        initHapticsAndLanguage();
         initTabs();
         initModeSwitcher();
         initMapNodes();
@@ -1153,6 +1457,7 @@
     function initTabs() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                playHapticSound('tab');
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
@@ -1165,6 +1470,7 @@
     function initModeSwitcher() {
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                playHapticSound('command');
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const mode = btn.dataset.mode;
@@ -1225,8 +1531,10 @@
     function initMapNodes() {
         document.querySelectorAll('.map-node').forEach(node => {
             node.addEventListener('click', () => {
+                playHapticSound('click');
                 const zone = node.dataset.zone;
-                const info = ZONE_DETAILS[zone];
+                const langZones = ZONE_DETAILS_BY_LANG[currentLanguage] || ZONE_DETAILS_BY_LANG.en || ZONE_DETAILS;
+                const info = langZones[zone] || ZONE_DETAILS[zone];
                 if (!info) return;
                 const statusColor = info.status === 'Optimal' ? 'var(--color-success)' : info.status === 'Warning' ? 'var(--color-warning)' : 'var(--color-danger)';
                 document.getElementById('zone-details-card').innerHTML = `
@@ -1284,6 +1592,7 @@
 
         document.querySelectorAll('.map-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+                playHapticSound('click');
                 document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const filter = btn.dataset.filter || 'all';
@@ -1322,6 +1631,7 @@
     function initPromptChips() {
         document.querySelectorAll('.prompt-chip').forEach(chip => {
             chip.addEventListener('click', () => {
+                playHapticSound('click');
                 const prompt = chip.dataset.prompt;
                 processAIQuery(prompt);
             });
@@ -1335,6 +1645,7 @@
             const field = document.getElementById('ai-input-field');
             const val = field.value.trim();
             if (!val) return;
+            playHapticSound('click');
             processAIQuery(val);
             field.value = '';
         });
@@ -1384,6 +1695,7 @@
             aiBubble.innerHTML = `<span class="bubble-label">Nexus AI</span>${AI_RESPONSES[responseKey]}`;
             chatBody.appendChild(aiBubble);
             chatBody.scrollTop = chatBody.scrollHeight;
+            playHapticSound('success');
         }, 1200);
     }
 
