@@ -6,6 +6,10 @@
 [![HTML5 / Vanilla JS](https://img.shields.io/badge/Frontend-Vanilla_JS_ES6+-FF007A.svg)](https://developer.mozilla.org)
 [![GenAI Knowledge Graph](https://img.shields.io/badge/AI-8_Language_LLM_Core-00FF88.svg)](#)
 
+### 🌐 Live Interactive Dashboards (Instant Web Access)
+[![Live Demo - Main AI Operations Portal](https://img.shields.io/badge/Launch_Live_Portal-Main_AI_Operations_Deck-00F0FF?style=for-the-badge&logo=googlechrome&logoColor=black)](https://unknown404-practice.github.io/Nexus-2026/)
+[![Live Demo - Architecture & SQL Simulator](https://img.shields.io/badge/Launch_Live_Simulator-Architecture_&_SQL_Engine-FF007A?style=for-the-badge&logo=sqlite&logoColor=white)](https://unknown404-practice.github.io/Nexus-2026/architecture_dashboard.html)
+
 ---
 
 ## 🚀 Executive Summary & Architectural Overview
